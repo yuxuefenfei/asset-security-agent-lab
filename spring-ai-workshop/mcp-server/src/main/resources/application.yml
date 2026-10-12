@@ -1,0 +1,17 @@
+server:
+  address: 127.0.0.1
+  port: 8082
+spring:
+  application:
+    name: asset-mcp-server
+  ai:
+    mcp:
+      server:
+        name: asset-security-demo-mcp
+        version: 1.0.0
+        type: SYNC
+        protocol: STREAMABLE
+lab:
+  core-url: http://127.0.0.1:8080
+  api-token: ${LAB_API_TOKEN:learn-agent-local}
+  allowed-ip: 192.0.2.10

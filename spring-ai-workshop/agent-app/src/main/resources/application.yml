@@ -1,0 +1,39 @@
+server:
+  address: 127.0.0.1
+  port: 8083
+spring:
+  application:
+    name: asset-agent-spring-ai
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
+      chat:
+        options:
+          model: ${OLLAMA_MODEL:qwen2.5:7b}
+          temperature: 0.1
+    mcp:
+      client:
+        enabled: false
+lab:
+  core-url: http://127.0.0.1:8080
+  api-token: ${LAB_API_TOKEN:learn-agent-local}
+  tool-backend: local
+  allowed-ip: 192.0.2.10
+---
+spring:
+  config:
+    activate:
+      on-profile: mcp
+  ai:
+    mcp:
+      client:
+        enabled: true
+        type: SYNC
+        request-timeout: 20s
+        streamable-http:
+          connections:
+            asset-lab:
+              url: http://127.0.0.1:8082
+              endpoint: /mcp
+lab:
+  tool-backend: mcp
