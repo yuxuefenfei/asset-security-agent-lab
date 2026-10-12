@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class McpToolConfiguration {
     /**
-     * The MCP Starter turns the same Spring AI @Tool callbacks into MCP tools/list + tools/call.
+     * MCP Starter 将 Spring AI 的 @Tool 回调注册为 MCP 工具，通过 tools/list 发现并通过 tools/call 调用。
      */
     @Bean
     ToolCallbackProvider assetMcpTools(McpAssetTools tools) {

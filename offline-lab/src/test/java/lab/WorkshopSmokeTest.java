@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Optional packaged-app smoke test: real Spring/MCP services, deterministic fake Ollama. */
+/** 可选的打包应用冒烟测试：运行真实 Spring/MCP 服务，使用确定性的模拟 Ollama。 */
 public final class WorkshopSmokeTest {
     public static void main(String[] args) throws Exception {
         Path root = Path.of(args.length == 0 ? "." : args[0]).toAbsolutePath().normalize();

@@ -3,7 +3,7 @@ package lab;
 import java.util.*;
 
 /**
- * Three read-only tools, scoped to a single tenant and single authorized IP per run.
+ * 提供三个只读工具；资产访问受固定租户和本次授权 IP 的范围限制。
  */
 public final class ScopedTools {
     private final DemoData data;

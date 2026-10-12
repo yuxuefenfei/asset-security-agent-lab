@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Deterministic scoring stays in Java; the model is only an evidence-backed narrative assistant.
+ * 确定性风险评分由 Java 计算；模型仅用于辅助生成分析说明。
  */
 public final class AgentService {
     private final DemoData data;
@@ -32,7 +32,7 @@ public final class AgentService {
             int cvss = (int) Math.round(((Number) vuln.getOrDefault("cvss", 0)).doubleValue() * 10);
             highest = Math.max(highest, cvss);
         }
-        // A teaching-only risk heuristic, NOT a validated security risk scoring algorithm.
+        // 此启发式风险评分仅用于教学，未经真实安全场景验证。
         int score = Math.min(100, highest + (Boolean.TRUE.equals(asset.get("internetExposed")) ? 10 : 0) + ("HIGH".equals(asset.get("criticality")) ? 5 : 0));
         String level = score >= 80 ? "HIGH" : score >= 50 ? "MEDIUM" : "LOW";
         String summary = "【离线教学规则】资产" + ip + "有" + vulns.size() + "条模拟扫描记录。当前风险等级" + level + "（示例评分" + score + "/100）；这些扫描记录均未人工验证。请参考关联知识文档，并在正式整改前确认实际版本、暴露面及影响。";

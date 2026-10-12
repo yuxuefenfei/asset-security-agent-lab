@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 
 /**
- * Loopback-only teaching HTTP service. NOT a production authentication or deployment reference.
+ * 仅监听本机回环地址的教学 HTTP 服务，不作为生产认证或部署方案的参考。
  */
 public final class LabServer {
     private final DemoData data = new DemoData();
@@ -51,7 +51,7 @@ public final class LabServer {
                 }
                 return;
             }
-            // X-Lab-Token is a deliberately local-only teaching mechanism, not production IAM.
+            // X-Lab-Token 仅用于本机教学实验，不提供生产级身份认证与访问控制。
             if (!token.equals(ex.getRequestHeaders().getFirst("X-Lab-Token")))
                 throw new SecurityException("需要有效的 X-Lab-Token（本地实验口令）");
             Map<String, String> query = queryParams(ex.getRequestURI().getRawQuery());

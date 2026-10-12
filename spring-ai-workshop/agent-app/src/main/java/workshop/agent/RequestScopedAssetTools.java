@@ -4,7 +4,7 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 /**
- * Per-request tool object binds the LLM to an explicitly authorized asset.
+ * 为每个请求创建独立工具对象，将模型的资产查询绑定到本次授权目标。
  */
 public class RequestScopedAssetTools {
     private final CoreLabGateway gateway;

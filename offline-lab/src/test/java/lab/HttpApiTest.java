@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** HTTP contract checks use an isolated child JVM and a loopback-only fake model. */
+/** 通过独立子 JVM 和仅监听本机回环地址的模拟模型，验证 HTTP 接口契约。 */
 public final class HttpApiTest {
     public static void main(String[] args) throws Exception {
         AtomicReference<String> modelBody = new AtomicReference<>("{}");

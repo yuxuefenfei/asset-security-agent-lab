@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Human-approved ticket simulation. Persistent storage and strong authentication are future exercises.
+ * 模拟人工审批工单；持久化存储与正式身份认证属于后续练习。
  */
 public final class TicketService {
     private final AgentService agent;

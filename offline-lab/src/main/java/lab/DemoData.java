@@ -3,7 +3,7 @@ package lab;
 import java.util.*;
 
 /**
- * All records are fictional laboratory fixtures (documentation-only IP ranges).
+ * 所有记录均为虚构的实验数据，IP 使用文档专用的保留地址段。
  */
 public final class DemoData {
     public static final String TENANT = "tenant-blue";

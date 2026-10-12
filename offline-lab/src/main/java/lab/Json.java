@@ -3,7 +3,7 @@ package lab;
 import java.util.*;
 
 /**
- * Minimal JSON codec for an offline JDK-only lab. Not a replacement for Jackson in production.
+ * 仅依赖 JDK 的离线实验用简易 JSON 编解码器，不能替代生产环境中的 Jackson。
  */
 public final class Json {
     private Json() {

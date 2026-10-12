@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Verifies real OpenAI-compatible protocol tool round-trip, with a deterministic fake LLM.
+ * 使用确定性的模拟模型，验证 OpenAI 兼容协议中的工具请求、执行与结果回传流程。
  */
 public class FakeModelTest {
     public static void main(String[] args) throws Exception {

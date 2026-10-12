@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * Local @Tool and optional MCP ToolCallbackProvider demonstrate the same LLM-facing interface.
+ * 通过本地 @Tool 或可选的 MCP ToolCallbackProvider，演示模型工具调用的两种接入方式。
  */
 @RestController
 @RequestMapping("/ai")
@@ -37,7 +37,7 @@ public class AgentController {
     public ResponseEntity<?> analyze(@RequestBody Request request) {
         if (request.ip() == null || request.ip().isBlank() || request.question() == null || request.question().isBlank() || request.question().length() > 1000)
             return ResponseEntity.badRequest().body(Map.of("error", "参数不完整或问题过长"));
-        gateway.verifyIp(request.ip()); // access gate BEFORE contacting LLM
+        gateway.verifyIp(request.ip()); // 在调用模型前校验目标资产的访问范围
         String instruction = "分析资产 " + request.ip() + "。任务：" + request.question();
         String output;
         if ("mcp".equals(backend)) {

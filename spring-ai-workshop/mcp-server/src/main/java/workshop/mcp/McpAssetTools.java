@@ -9,7 +9,7 @@ import org.springframework.web.client.RestClient;
 import java.util.Map;
 
 /**
- * Read-only MCP facade around existing REST APIs, demonstrating reuse without DB duplication.
+ * 为现有 REST API 提供只读 MCP 适配层，复用业务接口而不复制数据库中的数据。
  */
 @Component
 public class McpAssetTools {
