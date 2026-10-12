@@ -9,9 +9,9 @@
 | 工程                            | 启动环境                              | 是否依赖模型/外网      | 学习内容                                                             | 验证状态                                                       |
 |---------------------------------|---------------------------------------|------------------------|----------------------------------------------------------------------|----------------------------------------------------------------|
 | `offline-lab/`                  | JDK 21                                | 否                     | API、业务数据、Tool Dispatcher、知识检索、报告、工单和审批           | ✅ 本环境编译、自测和 HTTP 验证                                |
-| `offline-lab` 的 `llm` 模式     | JDK 21 + 支持 Tool Calling 的模型服务 | 本地 Ollama 或兼容 API | **真正模型 Tool Calling**：模型发出工具请求，Java 执行，结果返回模型 | ✅ 用本地 fake LLM 完成 2 轮协议测试；真实模型效果需你本地验证 |
-| `spring-ai-workshop/agent-app`  | JDK 21 + Maven + Ollama               | 需要模型和 Maven 依赖  | Spring AI `ChatClient`、`@Tool`、请求级工具范围校验                  | ⚠️ 源码提供，当前交付环境没有 Maven/外网，未进行真实依赖构建   |
-| `spring-ai-workshop/mcp-server` | JDK 21 + Maven                        | 需要 Maven 依赖        | 通过 Spring AI MCP Starter 暴露 `tools/list`/`tools/call`            | ⚠️ 源码提供，当前交付环境没有 Maven/外网，未进行真实依赖构建   |
+| `offline-lab` 的 `llm` 模式     | JDK 21 + 支持 Tool Calling 的模型服务 | 本地 Ollama 或兼容 API | **真正模型 Tool Calling**：模型发出工具请求，Java 执行，结果返回模型 | ✅ fake LLM 两轮协议、HTTP 错误路径已验证；真实模型效果另行实测 |
+| `spring-ai-workshop/agent-app`  | JDK 21 + Maven + Ollama               | 需要模型和 Maven 依赖  | Spring AI `ChatClient`、`@Tool`、请求级工具范围校验                  | ✅ 构建、5 项回归及 local/MCP fake 模型调用链通过；真实模型未评测 |
+| `spring-ai-workshop/mcp-server` | JDK 21 + Maven                        | 需要 Maven 依赖        | 通过 Spring AI MCP Starter 暴露 `tools/list`/`tools/call`            | ✅ 构建及 2 项 MCP HTTP 初始化、发现、调用和越权集成测试通过 |
 
 > 为什么不一开始引入数据库、Redis、Docker、向量库？为了把第一次学习的注意力集中在 Agent 机制而不是环境配置。基础跑通后，在
 > `docs/07-升级路线.md` 中按步骤替换为真正企业级组件。
@@ -39,13 +39,17 @@ java -version
 > 如果要换 HTTP 端口：`LAB_PORT=18080 ./scripts/run-offline.sh`。端口默认仅监听 `127.0.0.1`。前端实验口令默认
 > `learn-agent-local`；如自行修改 `LAB_API_TOKEN`，请在页面口令输入框里同步修改。
 
-Windows PowerShell（没有 Bash）可手动编译：
+Windows PowerShell（没有 Bash）可手动编译；先将 `JAVA_HOME` 指向 JDK 21，并检查 `java -version`：
 
 ```powershell
+# 仅修改当前终端；替换为实际 JDK 21 路径
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+java -version
 cd offline-lab
 New-Item -ItemType Directory -Force target/classes | Out-Null
 $src = Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object FullName
-javac -encoding UTF-8 -d target/classes $src
+javac --release 21 -encoding UTF-8 -d target/classes $src
 Copy-Item src/main/resources/index.html target/classes/index.html
 java -cp target/classes lab.LabServer
 ```
@@ -69,7 +73,7 @@ curl -X POST 'http://127.0.0.1:8080/api/analyze' \
 
 ## 3. 真的使用大模型的 Tool Calling（不依赖 Spring AI）
 
-离线版除了 `demo`，还支持 `mode=llm`。这是使用 JDK `HttpClient` 手动实现的标准 OpenAI **兼容的工具调用消息循环**
+离线版除了 `demo`，还支持 `mode=llm`。这是使用 JDK `HttpClient` 手动实现的 **OpenAI Chat Completions 兼容工具调用循环**
 ，目的就是让你看到框架替你隐藏了什么。
 
 先启动支持工具调用的 Ollama 模型（模型名称及内存要求由你的环境决定）：
@@ -100,10 +104,10 @@ curl -X POST 'http://127.0.0.1:8080/api/analyze' \
 
 **与真实 Agent 的关系**：
 
-- `ModelToolAgent.java` 真的在请求模型 `tools` 列表并执行模型返回的 `tool_calls`，不是仅输出固定的工具调用文字。
+- `ModelToolAgent.java` 向模型发送 `tools` 定义，并执行模型返回的 `tool_calls`，不是仅输出固定的工具调用文字。
 - `ScopedTools.java` 强制限制可调用工具、绑定当前 IP 和租户，禁止写入业务数据。
 - `AgentService.java` 中的评分是确定性的 Java 教学规则；模型负责辅助解释，不具备修改评分和越权调用的权限。
-- 模型可能不调用全部工具，也可能生成错误解释。因此需要审查 `toolTrace`、引文与输出，不能只相信自然语言回答。
+- `toolTrace.origin` 区分 `java-orchestrator` 与 `llm-request`；前者是 Java 的固定预查询，只有后者才是模型请求执行的工具。模型可能不调用全部工具，也可能生成错误解释。因此需要审查 `toolTrace`、引文与输出，不能只相信自然语言回答。
 
 ## 4. Spring AI：从手动工具循环到框架封装
 
@@ -111,7 +115,7 @@ curl -X POST 'http://127.0.0.1:8080/api/analyze' \
 
 ```bash
 cd spring-ai-workshop
-mvn -q -pl agent-app -am spring-boot:run
+mvn -q -f agent-app/pom.xml spring-boot:run
 ```
 
 访问 `http://127.0.0.1:8083/ai/analyze`：
@@ -130,9 +134,11 @@ curl -X POST http://127.0.0.1:8083/ai/analyze \
 ### Spring AI 真正帮你省掉了什么？
 
 `ModelToolAgent.java` 手写了工具 Schema、模型请求、解析 `tool_calls`、执行 Java 方法、拼装 Tool 结果、再请求模型。Spring AI 的
-`ChatClient` + `.tools(new RequestScopedAssetTools(...))` 负责完成这些框架级集成。
+`ChatClient` + `.tools(new RequestScopedAssetTools(...))` 负责完成这些框架级集成。MCP 的 `ToolCallbackProvider` 则通过 `.toolCallbacks(provider)` 传入，不能当作带 `@Tool` 的普通对象传给 `.tools(...)`。
 
 但 **权限、租户隔离、工具白名单、审批** 仍是你自己的业务责任。
+
+Spring 示例 `/ai/analyze` 返回 `backend`、`assetIp`、`answer`、`warning`，用于演示工具接入。它不调用离线版的 `/api/analyze`，不会保存分析报告、计算结构化评分或创建工单；完整报告和审批演练仍通过 8080 的离线核心服务完成。Spring Agent 与 MCP Server 默认均只允许 `192.0.2.10`。
 
 ## 5. MCP：把已稳定的工具复用给其他 Agent
 
@@ -140,17 +146,17 @@ curl -X POST http://127.0.0.1:8083/ai/analyze \
 
 ```bash
 cd spring-ai-workshop
-mvn -q -pl mcp-server -am spring-boot:run
+mvn -q -f mcp-server/pom.xml spring-boot:run
 ```
 
-服务监听 `127.0.0.1:8082`，Spring AI MCP Starter 默认暴露 Streamable HTTP 的 `/mcp`。它只提供只读资产/漏洞/知识工具，并将查询转发到
+服务监听 `127.0.0.1:8082`，本项目通过 `protocol: STREAMABLE` 启用 Streamable HTTP，端点默认为 `/mcp`。它只提供只读资产/漏洞/知识工具，并将查询转发到
 8080 的既有 REST API， **并没有重写业务服务**。
 
 然后使用 `mcp` 配置启动 Agent（需退出之前的 8083 Agent，避免端口冲突）：
 
 ```bash
 cd spring-ai-workshop
-mvn -q -pl agent-app -am spring-boot:run -Dspring-boot.run.profiles=mcp
+mvn -q -f agent-app/pom.xml spring-boot:run -Dspring-boot.run.profiles=mcp
 ```
 
 仍然调用 8083 的同一个 `/ai/analyze` 接口，就能比较：
@@ -187,22 +193,22 @@ MCP  模式：LLM -> MCP Client -> MCP Server -> REST 网关 -> 离线核心服�
 | [`docs/06-安全与测试.md`](docs/06-安全与测试.md)                     | 测试清单、提示词注入、租户隔离、安全边界 |
 | [`docs/07-升级路线.md`](docs/07-升级路线.md)                         | 生产化路线和技术取舍                     |
 | [`docs/08-面试与简历.md`](docs/08-面试与简历.md)                     | 演示步骤、常见追问、真实履历写法         |
+| [`docs/09-核验记录.md`](docs/09-核验记录.md)                         | 已核验结论、修正项、复现命令与验证范围   |
 
 ## 8. 已知边界
 
 - 资产和漏洞是 `DemoData` 中的虚构训练数据，不发起扫描、不调用 Nmap。
 - 所有业务记录仅保存在 JVM 内存， **重启即丢失**；没有 MySQL、Redis、RabbitMQ。
-- 检索目前是 **关键词检索型 RAG 基础练习**，没有 Embedding、向量数据库或复杂重排。练习在文档中提供升级步骤。
+- 检索目前是 **关键词检索与来源标识的基础练习**（`demo` 模式不生成模型回答），没有 Embedding、向量数据库或复杂重排。练习在文档中提供升级步骤。
 - 风险打分为 **演示启发式规则**，并非真实 CVSS/EPSS 或资产风险计算标准。
 - `X-Lab-Token` 和本地审批码不是企业 IAM；没有真实 RBAC/ABAC、持久审计、正式工单同步。
-- 交付环境对 Maven Central 无网络访问且没有 `mvn`，所以 Spring AI 与 MCP 模块 **尚未在交付环境内编译运行**；仅核对了官方
-  API 文档及版本组合。遇到依赖/API 不一致请参考 `docs/07-升级路线.md`。
+- 2026-10-12 已使用 JDK 21.0.4、Maven 3.9.6 完成 Spring AI/MCP 构建与回归测试；真实 Ollama 模型效果未评测。验证范围和复现命令见 `docs/09-核验记录.md`。
 - 不包含 API 密钥，别在源码中硬编码密钥。
 
 ## 9. 参考官方资料
 
-- Spring AI Tool Calling：https://docs.spring.io/spring-ai/reference/1.1/api/tools.html
-- Spring AI Ollama：https://docs.spring.io/spring-ai/reference/1.1/api/chat/ollama-chat.html
-- Spring AI MCP Server：https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-server-boot-starter-docs.html
-- Spring AI MCP Client：https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-client-boot-starter-docs.html
-- Model Context Protocol 规范：https://modelcontextprotocol.io/specification
+- [Spring AI Tool Calling](https://docs.spring.io/spring-ai/reference/1.1/api/tools.html)
+- [Spring AI Ollama](https://docs.spring.io/spring-ai/reference/1.1/api/chat/ollama-chat.html)
+- [Spring AI MCP Server](https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-server-boot-starter-docs.html)
+- [Spring AI MCP Client](https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-client-boot-starter-docs.html)
+- [Model Context Protocol 传输规范（2025-06-18）](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)

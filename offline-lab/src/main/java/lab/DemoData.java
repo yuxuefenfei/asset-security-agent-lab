@@ -23,7 +23,7 @@ public final class DemoData {
         articles.add(Json.map("id", "KB-001", "title", "LAB-2026-0001 DemoWeb 修复公告（虚构）", "keywords", "LAB-2026-0001 DemoWeb Web 框架 补丁 版本", "body", "核实实际运行的 DemoWeb 版本；测试兼容后升级到内部维护的已修复版本；整改后重新扫描。不得仅根据端口开放判定漏洞已被利用。", "source", "training://kb/KB-001"));
         articles.add(Json.map("id", "KB-002", "title", "LAB-2026-0002 Web 基线配置（虚构）", "keywords", "LAB-2026-0002 DemoConfig 配置 基线", "body", "核对配置基线、限制管理接口访问、复核暴露路径，整改后进行配置审计。", "source", "training://kb/KB-002"));
         articles.add(Json.map("id", "KB-003", "title", "LAB-2026-0003 数据库补丁规范（虚构）", "keywords", "LAB-2026-0003 DemoDB 数据库 修复", "body", "确认维护窗口和数据库备份，验证测试环境兼容性后应用补丁，完成回归测试与漏洞复测。", "source", "training://kb/KB-003"));
-        articles.add(Json.map("id", "KB-004", "title", "安全工单处理规范", "keywords", "安全 工单 审批 风险 处置 修复", "body", "AI 仅生成报告与整改工单草稿，必须由授权人员审批后创建正式工单；整改后必须由扫描器或管理员重新验证。", "source", "training://policy/SEC-001"));
+        articles.add(Json.map("id", "KB-004", "title", "安全工单处理规范", "keywords", "安全 工单 审批 风险 处置 修复", "body", "AI 仅辅助生成分析说明；用户通过独立接口创建整改工单草稿并审批。教学平台仅记录模拟审批，不创建外部正式工单；真实整改后必须由扫描器或管理员重新验证。", "source", "training://policy/SEC-001"));
     }
 
     public Map<String, Object> asset(String ip) {

@@ -32,7 +32,7 @@ public class RequestScopedAssetTools {
         return gateway.getVulnerabilities(ip);
     }
 
-    @Tool(description = "按漏洞编号检索企业内部修复知识库，返回文档来源")
+    @Tool(description = "按漏洞编号检索共享教学知识库，返回虚构文档来源")
     public Object searchKnowledge(@ToolParam(description = "漏洞编号或安全修复关键词") String query) {
         return gateway.searchKnowledge(query);
     }

@@ -57,12 +57,12 @@
 
 在单元测试 `FakeModelTest.java` 中可以找到真实的 **两轮协议对话**，不依赖任何模型即可验证这个机制。
 
-## C. MCP 是什么、不是什麽
+## C. MCP 是什么、不是什么
 
 MCP 提供 `initialize`、`tools/list`、`tools/call` 等标准能力（还有资源、提示模板等）。MCP Server 可以经本地 STDIO 或远程
 Streamable HTTP 被调用，它不是「又一个需要大模型的服务」，也不是「所有 Tool 的强制执行方式」。
 
-本工程的 `mcp-server` 不复制任何业务数据，而是复用现有 `offline-lab` REST API；任何使用 MCP 的 AI 客户端只需遵循同一工具协议。
+本工程显式配置 `protocol: STREAMABLE`（WebMVC Starter 未配置此属性时默认为 SSE）。STDIO 通常由客户端启动独立子进程，不等于 Agent JVM 内的方法调用。`mcp-server` 不复制任何业务数据，而是复用现有 `offline-lab` REST API；任何使用 MCP 的 AI 客户端只需遵循同一工具协议。
 
 ```mermaid
 sequenceDiagram
@@ -71,9 +71,12 @@ sequenceDiagram
     participant L as LLM
     participant M as MCP Server
     participant B as 业务API
-    User ->> A: 分析 192.0.2.10
+    A ->> M: initialize（启动连接时）
+    M -->> A: 协议版本和能力
+    A ->> M: notifications/initialized
     A ->> M: tools/list (发现)
     M -->> A: schema
+    User ->> A: 分析 192.0.2.10
     A ->> L: prompt + tool schema
     L -->> A: getAsset(ip) 请求
     A ->> M: tools/call
@@ -100,8 +103,8 @@ sequenceDiagram
 ## E. 框架迁移练习
 
 1. 在 `ScopedTools` 添加 `get_asset_ports(ip)`；重新运行测试。
-2. 在 `RequestScopedAssetTools` 添加同名 `@Tool` 方法。
-3. 在 `McpAssetTools` 添加同名 `@Tool` 方法并注册为回调。
+2. 在 `RequestScopedAssetTools` 添加对应的 `@Tool` 方法；若要保持 `get_asset_ports` 这一工具名，需要显式设置 `@Tool(name = "get_asset_ports")`。
+3. 在 `McpAssetTools` 添加对应的 `@Tool` 方法并注册为回调；框架示例现有方法默认采用 `getAsset`、`getVulnerabilities`、`searchKnowledge`，与离线版蛇形工具名不同，MCP Client 还可能添加连接前缀。
 4. 分别通过 Spring AI local 和 MCP profile 询问模型资产有哪些开放端口。
 5. 比较两个模式下调试点、延迟、错误码、业务权限边界。
 

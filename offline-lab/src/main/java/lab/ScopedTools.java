@@ -24,7 +24,7 @@ public final class ScopedTools {
         return List.of(
                 Json.map("type", "function", "function", Json.map("name", "get_asset", "description", "查询目标资产基本信息、归属和网络暴露情况", "parameters", ipSchema)),
                 Json.map("type", "function", "function", Json.map("name", "get_vulnerabilities", "description", "查询目标资产的漏洞扫描记录", "parameters", ipSchema)),
-                Json.map("type", "function", "function", Json.map("name", "search_knowledge", "description", "检索企业内部漏洞修复知识库，返回来源证据", "parameters", qSchema))
+                Json.map("type", "function", "function", Json.map("name", "search_knowledge", "description", "检索共享的虚构教学知识库，返回来源标识", "parameters", qSchema))
         );
     }
 
@@ -37,6 +37,13 @@ public final class ScopedTools {
     }
 
     public Object call(String name, Map<String, Object> args, String origin) {
+        String parameter = switch (name) {
+            case "get_asset", "get_vulnerabilities" -> "ip";
+            case "search_knowledge" -> "query";
+            default -> throw new IllegalArgumentException("工具不在白名单中：" + name);
+        };
+        if (args == null || !args.keySet().equals(Set.of(parameter)) || !(args.get(parameter) instanceof String))
+            throw new IllegalArgumentException("工具参数必须且仅包含字符串字段：" + parameter);
         Object result = switch (name) {
             case "get_asset" -> {
                 verifyIp(args);

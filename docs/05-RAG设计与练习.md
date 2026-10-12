@@ -5,6 +5,8 @@
 `DemoData.search()` 对虚构漏洞知识文本做了最小 **词项匹配和相关性排序**。例如 `LAB-2026-0001` 可以找到文档 `KB-001`，带有固定
 `source`，最后由 Java 附加到 `knowledgeEvidence`。
 
+在 `llm` / Spring AI 模式中，模型调用检索工具后才会收到相应内容；Java 在报告中附加 `knowledgeEvidence` 并不等于该内容已经传给模型。`demo` 模式只有规则说明，不包含大模型生成。当前知识库是全体演示资产共享的虚构资料，未实现文档级租户过滤。`training://...` 是模拟来源标识，不是可访问的官方公告链接。
+
 这是 **检索增强生成（RAG）的检索基础**，但不是向量 RAG；它没有文本分块、Embedding、向量索引、混合检索或重排。请勿在个人简历写成「已实现
 pgvector 高质量语义检索」。
 
@@ -16,14 +18,13 @@ pgvector 高质量语义检索」。
 - 受影响软件版本应使用结构化规则比对，不能由模型猜测。
 - 向量检索适用于「如何缓解风险」「变更窗口应该注意什么」等自然语言需求。
 
-建议做 **元数据过滤 + 倒排检索/BM25 + 向量语义检索 + 重排**。
+可按实际检索需求组合 **元数据过滤 + 倒排检索/BM25 + 向量语义检索 + 重排**。pgvector 提供向量存储和相似度检索，BM25 和重排需要另外实现或接入；参考 [pgvector 官方说明](https://github.com/pgvector/pgvector#hybrid-search)。
 
 ## 3. 正式版参考数据模型
 
 ```sql
 -- 练习用 PostgreSQL DDL；需要安装 pgvector 后自行运行。
-CREATE
-EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE knowledge_chunk
 (
     id               UUID PRIMARY KEY,
@@ -55,7 +56,7 @@ CREATE INDEX idx_chunk_tenant_advisory ON knowledge_chunk (tenant_id, advisory_i
 
 ## 5. 从当前源码开始的练习
 
-- 练习 A：给 `search` 增加 `advisoryId` 精确命中加权，编写 test 验证搜索不会误匹配另一条。
+- 练习 A：当前 `lab-` 开头词项已有 5 倍加权，但仍采用子串匹配；增加结构化 `advisoryId` 严格匹配与优先级，编写 test 验证搜索不会误匹配另一条。
 - 练习 B：把当前 `List<Map>` 换成 `KnowledgeChunk` record，区分数据与展示字段。
 - 练习 C：增加 `sourceURI` 真实性校验；为不存在的编号返回「无匹配资料」。
 - 练习 D：引入本地 Embedding 模型和 pgvector，增加 Retriever 接口 `retrieve(query, tenantId, filter)`。

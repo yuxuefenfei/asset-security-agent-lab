@@ -35,14 +35,14 @@ public class AgentController {
 
     @PostMapping("/analyze")
     public ResponseEntity<?> analyze(@RequestBody Request request) {
-        if (request.ip() == null || request.question() == null || request.question().length() > 1000)
+        if (request.ip() == null || request.ip().isBlank() || request.question() == null || request.question().isBlank() || request.question().length() > 1000)
             return ResponseEntity.badRequest().body(Map.of("error", "参数不完整或问题过长"));
         gateway.verifyIp(request.ip()); // access gate BEFORE contacting LLM
         String instruction = "分析资产 " + request.ip() + "。任务：" + request.question();
         String output;
         if ("mcp".equals(backend)) {
             ToolCallbackProvider p = providers.orderedStream().findFirst().orElseThrow(() -> new IllegalStateException("MCP 工具未连接，请先启动 MCP Server"));
-            output = chatClient.prompt().system(SYSTEM).user(instruction).tools(p).call().content();
+            output = chatClient.prompt().system(SYSTEM).user(instruction).toolCallbacks(p).call().content();
         } else {
             output = chatClient.prompt().system(SYSTEM).user(instruction)
                     .tools(new RequestScopedAssetTools(gateway, request.ip()))

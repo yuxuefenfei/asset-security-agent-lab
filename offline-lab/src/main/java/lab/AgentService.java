@@ -1,5 +1,6 @@
 package lab;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +38,13 @@ public final class AgentService {
         String summary = "【离线教学规则】资产" + ip + "有" + vulns.size() + "条模拟扫描记录。当前风险等级" + level + "（示例评分" + score + "/100）；这些扫描记录均未人工验证。请参考关联知识文档，并在正式整改前确认实际版本、暴露面及影响。";
         String warning = "本系统为演示数据，漏洞编号 LAB-* 非真实 CVE。此评分仅用于学习，不可直接用于生产环境决策。";
         if (mode.equals("llm")) {
-            String llmText = new ModelToolAgent().reason(ip, question, tools);
+            String llmText;
+            try {
+                llmText = new ModelToolAgent().reason(ip, question, tools);
+            } catch (Exception ex) {
+                if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
+                throw new IOException("模型分析失败，请检查模型服务与工具调用响应", ex);
+            }
             summary = llmText.isBlank() ? "模型未输出解释，已保留规则分析。" : llmText;
         }
         String id = UUID.randomUUID().toString();

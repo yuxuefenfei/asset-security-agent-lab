@@ -220,6 +220,7 @@
         button.disabled = true;
         result.textContent = '正在执行分析...';
         reportId = ticketId = null;
+        document.getElementById('ticketStatus').textContent = '';
         document.getElementById('draft').disabled = true;
         document.getElementById('approve').disabled = true;
         try {

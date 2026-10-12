@@ -5,7 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetAddress;
+
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +28,7 @@ public final class LabServer {
 
     public void start() throws Exception {
         int port = Integer.parseInt(System.getenv().getOrDefault("LAB_PORT", "8080"));
-        HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
         server.createContext("/", this::handle);
         server.setExecutor(Executors.newFixedThreadPool(8));
         server.start();
@@ -67,6 +67,7 @@ public final class LabServer {
                 result = data.vulnerabilities(ip);
             } else if (method.equals("GET") && path.equals("/api/knowledge")) {
                 String q = query.getOrDefault("q", "");
+                if (q.length() > 200) throw new IllegalArgumentException("检索内容不能超过200字");
                 result = q.isBlank() ? List.of() : data.search(q, 5);
             } else if (method.equals("POST") && path.equals("/api/analyze")) {
                 Map<String, Object> body = body(ex);
@@ -81,7 +82,7 @@ public final class LabServer {
             } else if (method.equals("GET") && path.equals("/api/tickets")) result = tickets.list();
             else if (method.equals("GET") && path.equals("/api/tools")) result = ScopedTools.schemas();
             else {
-                json(ex, 404, Json.map("error", "接口不存在"));
+                json(ex, 404, Json.map("success", false, "error", "接口不存在"));
                 return;
             }
             json(ex, 200, Json.map("success", true, "data", result));
