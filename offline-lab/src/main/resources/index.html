@@ -1,5 +1,266 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>资产安全 AI Agent 实验平台</title><style>
-:root{font-family:system-ui,"Microsoft Yahei",sans-serif;color:#192c3a;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}header{background:#132d3b;color:white;padding:22px max(20px,calc((100vw - 1100px)/2))}h1{font-size:24px;margin:0 0 9px}header p{margin:0;color:#bfd2de;font-size:13px}main{max-width:1100px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:340px 1fr;gap:18px}.panel{background:white;border:1px solid #dee5ea;border-radius:12px;padding:20px;box-shadow:0 3px 10px #10203008}h2{font-size:18px;margin:0 0 16px}p{line-height:1.6}label{display:block;color:#415665;font-size:13px;margin:14px 0 5px}select,textarea,input{width:100%;border:1px solid #cbd7dd;border-radius:7px;padding:10px 11px;font:inherit}textarea{min-height:96px;resize:vertical}button{background:#087f73;color:white;border:0;border-radius:7px;padding:11px 15px;cursor:pointer;font-weight:650;margin-top:12px}button.secondary{background:#294961}button:disabled{opacity:.4;cursor:not-allowed}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f5f6;border-radius:7px;padding:12px;font-size:12px;max-height:420px;overflow:auto}.hint{background:#fff8e1;color:#6a4d05;padding:11px;border-radius:8px;font-size:12px}#result{min-height:350px}.muted{color:#627684;font-size:13px}.steps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.tag{background:#e8f4f1;color:#14665d;border-radius:5px;padding:6px;font-size:12px}.badge{display:inline-block;background:#fff0e4;color:#9f4900;padding:4px 8px;border-radius:5px}.block{border-bottom:1px solid #e5e9ed;padding-bottom:14px;margin-bottom:14px}@media(max-width:780px){main{grid-template-columns:1fr}}
-</style></head><body><header><h1>资产安全 AI Agent · 入门实验平台</h1><p>从 Tool Calling → 知识检索 → 风险报告 → 人工审批 · 使用虚构训练数据，不进行真实扫描</p></header><main><div class="panel"><h2>创建分析任务</h2><div class="hint">默认使用纯规则教学模式，无需模型。LLM 模式需要提前配置兼容接口和支持 Tool Calling 的模型。</div><label>本地实验口令（X-Lab-Token）</label><input id="labToken" value="learn-agent-local" autocomplete="off"><label>资产</label><select id="ip"><option value="192.0.2.10">192.0.2.10 · 订单服务</option><option value="192.0.2.20">192.0.2.20 · 测试数据库</option></select><label>执行模式</label><select id="mode"><option value="demo">demo：离线规则 + Tool 追踪</option><option value="llm">llm：真实大模型 Tool Calling</option></select><label>自然语言任务</label><textarea id="question">请分析这台资产的安全风险，引用相关知识库证据并给出整改建议。</textarea><button id="run" onclick="analyze()">开始安全分析</button><h2 style="margin-top:25px">工单演示</h2><p class="muted">先分析，然后生成工单草稿。必须人工审批，不能由模型直接操作。</p><button id="draft" class="secondary" disabled onclick="draft()">生成工单草稿</button><label>本地审批码（见 README）</label><input id="code" type="password" placeholder="输入本地演示审批码"><button id="approve" class="secondary" disabled onclick="approve()">人工审批草稿</button><p id="ticketStatus" class="muted"></p></div><div class="panel"><h2>分析结果</h2><div id="result"><p class="muted">请选择资产并点击「开始安全分析」。</p></div></div></main><script>
-let reportId=null,ticketId=null;const token=()=>document.getElementById('labToken').value;const result=document.getElementById('result');const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));async function api(path,data){const r=await fetch(path,{method:data?'POST':'GET',headers:{'X-Lab-Token':token(),'Content-Type':'application/json'},body:data?JSON.stringify(data):undefined});const j=await r.json();if(!r.ok)throw Error(j.error||'请求失败');return j.data;}async function analyze(){const button=document.getElementById('run');button.disabled=true;result.textContent='正在执行分析...';reportId=ticketId=null;document.getElementById('draft').disabled=true;document.getElementById('approve').disabled=true;try{const r=await api('/api/analyze',{ip:document.getElementById('ip').value,mode:document.getElementById('mode').value,question:document.getElementById('question').value});reportId=r.id;document.getElementById('draft').disabled=false;result.innerHTML=`<div class="block"><strong>资产：</strong>${escapeHtml(r.asset.ip)} · ${escapeHtml(r.asset.hostname)}<br><strong>风险：</strong><span class="badge">${escapeHtml(r.riskLevel)} / ${r.riskScore}</span> · ${r.vulnerabilities.length}条扫描记录</div><div class="block"><strong>分析说明：</strong><p>${escapeHtml(r.summary)}</p><p class="hint">${escapeHtml(r.warning)}</p></div><div class="block"><strong>知识库证据</strong><ul>${r.knowledgeEvidence.map(k=>`<li>${escapeHtml(k.title)} <small>${escapeHtml(k.source)}</small></li>`).join('')}</ul></div><details open><summary>工具调用追踪（${r.toolTrace.length}次）</summary><pre>${escapeHtml(JSON.stringify(r.toolTrace,null,2))}</pre></details><details><summary>原始结构化报告</summary><pre>${escapeHtml(JSON.stringify(r,null,2))}</pre></details>`;}catch(e){result.textContent='失败：'+e.message;}finally{button.disabled=false;}}async function draft(){try{const t=await api('/api/tickets/draft',{analysisId:reportId});ticketId=t.id;document.getElementById('ticketStatus').textContent='工单 '+ticketId+'：'+t.status;document.getElementById('approve').disabled=false;}catch(e){alert(e.message);}}async function approve(){try{const t=await api('/api/tickets/approve',{ticketId,approvalCode:document.getElementById('code').value});document.getElementById('ticketStatus').textContent='工单 '+t.id+'：'+t.status+'（模拟，无外部工单系统调用）';document.getElementById('approve').disabled=true;}catch(e){alert(e.message);}}
-</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1" name="viewport">
+    <title>资产安全 AI Agent 实验平台</title>
+    <style>
+        :root {
+            font-family: system-ui, "Microsoft Yahei", sans-serif;
+            color: #192c3a;
+            background: #f3f6fa
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0
+        }
+
+        header {
+            background: #132d3b;
+            color: white;
+            padding: 22px max(20px, calc((100vw - 1100px) / 2))
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 9px
+        }
+
+        header p {
+            margin: 0;
+            color: #bfd2de;
+            font-size: 13px
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 16px;
+            display: grid;
+            grid-template-columns:340px 1fr;
+            gap: 18px
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid #dee5ea;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 3px 10px #10203008
+        }
+
+        h2 {
+            font-size: 18px;
+            margin: 0 0 16px
+        }
+
+        p {
+            line-height: 1.6
+        }
+
+        label {
+            display: block;
+            color: #415665;
+            font-size: 13px;
+            margin: 14px 0 5px
+        }
+
+        select, textarea, input {
+            width: 100%;
+            border: 1px solid #cbd7dd;
+            border-radius: 7px;
+            padding: 10px 11px;
+            font: inherit
+        }
+
+        textarea {
+            min-height: 96px;
+            resize: vertical
+        }
+
+        button {
+            background: #087f73;
+            color: white;
+            border: 0;
+            border-radius: 7px;
+            padding: 11px 15px;
+            cursor: pointer;
+            font-weight: 650;
+            margin-top: 12px
+        }
+
+        button.secondary {
+            background: #294961
+        }
+
+        button:disabled {
+            opacity: .4;
+            cursor: not-allowed
+        }
+
+        pre {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            background: #f1f5f6;
+            border-radius: 7px;
+            padding: 12px;
+            font-size: 12px;
+            max-height: 420px;
+            overflow: auto
+        }
+
+        .hint {
+            background: #fff8e1;
+            color: #6a4d05;
+            padding: 11px;
+            border-radius: 8px;
+            font-size: 12px
+        }
+
+        #result {
+            min-height: 350px
+        }
+
+        .muted {
+            color: #627684;
+            font-size: 13px
+        }
+
+        .steps {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 12px 0
+        }
+
+        .tag {
+            background: #e8f4f1;
+            color: #14665d;
+            border-radius: 5px;
+            padding: 6px;
+            font-size: 12px
+        }
+
+        .badge {
+            display: inline-block;
+            background: #fff0e4;
+            color: #9f4900;
+            padding: 4px 8px;
+            border-radius: 5px
+        }
+
+        .block {
+            border-bottom: 1px solid #e5e9ed;
+            padding-bottom: 14px;
+            margin-bottom: 14px
+        }
+
+        @media (max-width: 780px) {
+            main {
+                grid-template-columns:1fr
+            }
+        }
+    </style>
+</head>
+<body>
+<header><h1>资产安全 AI Agent · 入门实验平台</h1>
+    <p>从 Tool Calling → 知识检索 → 风险报告 → 人工审批 · 使用虚构训练数据，不进行真实扫描</p></header>
+<main>
+    <div class="panel"><h2>创建分析任务</h2>
+        <div class="hint">默认使用纯规则教学模式，无需模型。LLM 模式需要提前配置兼容接口和支持 Tool Calling 的模型。</div>
+        <label>本地实验口令（X-Lab-Token）</label><input autocomplete="off" id="labToken"
+                                                       value="learn-agent-local"><label>资产</label><select id="ip">
+            <option value="192.0.2.10">192.0.2.10 · 订单服务</option>
+            <option value="192.0.2.20">192.0.2.20 · 测试数据库</option>
+        </select><label>执行模式</label><select id="mode">
+            <option value="demo">demo：离线规则 + Tool 追踪</option>
+            <option value="llm">llm：真实大模型 Tool Calling</option>
+        </select><label>自然语言任务</label><textarea
+                id="question">请分析这台资产的安全风险，引用相关知识库证据并给出整改建议。</textarea>
+        <button id="run" onclick="analyze()">开始安全分析</button>
+        <h2 style="margin-top:25px">工单演示</h2>
+        <p class="muted">先分析，然后生成工单草稿。必须人工审批，不能由模型直接操作。</p>
+        <button class="secondary" disabled id="draft" onclick="draft()">生成工单草稿</button>
+        <label>本地审批码（见 README）</label><input id="code" placeholder="输入本地演示审批码" type="password">
+        <button class="secondary" disabled id="approve" onclick="approve()">人工审批草稿</button>
+        <p class="muted" id="ticketStatus"></p></div>
+    <div class="panel"><h2>分析结果</h2>
+        <div id="result"><p class="muted">请选择资产并点击「开始安全分析」。</p></div>
+    </div>
+</main>
+<script>
+    let reportId = null, ticketId = null;
+    const token = () => document.getElementById('labToken').value;
+    const result = document.getElementById('result');
+    const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[c]));
+
+    async function api(path, data) {
+        const r = await fetch(path, {
+            method: data ? 'POST' : 'GET',
+            headers: {'X-Lab-Token': token(), 'Content-Type': 'application/json'},
+            body: data ? JSON.stringify(data) : undefined
+        });
+        const j = await r.json();
+        if (!r.ok) throw Error(j.error || '请求失败');
+        return j.data;
+    }
+
+    async function analyze() {
+        const button = document.getElementById('run');
+        button.disabled = true;
+        result.textContent = '正在执行分析...';
+        reportId = ticketId = null;
+        document.getElementById('draft').disabled = true;
+        document.getElementById('approve').disabled = true;
+        try {
+            const r = await api('/api/analyze', {
+                ip: document.getElementById('ip').value,
+                mode: document.getElementById('mode').value,
+                question: document.getElementById('question').value
+            });
+            reportId = r.id;
+            document.getElementById('draft').disabled = false;
+            result.innerHTML = `<div class="block"><strong>资产：</strong>${escapeHtml(r.asset.ip)} · ${escapeHtml(r.asset.hostname)}<br><strong>风险：</strong><span class="badge">${escapeHtml(r.riskLevel)} / ${r.riskScore}</span> · ${r.vulnerabilities.length}条扫描记录</div><div class="block"><strong>分析说明：</strong><p>${escapeHtml(r.summary)}</p><p class="hint">${escapeHtml(r.warning)}</p></div><div class="block"><strong>知识库证据</strong><ul>${r.knowledgeEvidence.map(k => `<li>${escapeHtml(k.title)} <small>${escapeHtml(k.source)}</small></li>`).join('')}</ul></div><details open><summary>工具调用追踪（${r.toolTrace.length}次）</summary><pre>${escapeHtml(JSON.stringify(r.toolTrace, null, 2))}</pre></details><details><summary>原始结构化报告</summary><pre>${escapeHtml(JSON.stringify(r, null, 2))}</pre></details>`;
+        } catch (e) {
+            result.textContent = '失败：' + e.message;
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    async function draft() {
+        try {
+            const t = await api('/api/tickets/draft', {analysisId: reportId});
+            ticketId = t.id;
+            document.getElementById('ticketStatus').textContent = '工单 ' + ticketId + '：' + t.status;
+            document.getElementById('approve').disabled = false;
+        } catch (e) {
+            alert(e.message);
+        }
+    }
+
+    async function approve() {
+        try {
+            const t = await api('/api/tickets/approve', {
+                ticketId,
+                approvalCode: document.getElementById('code').value
+            });
+            document.getElementById('ticketStatus').textContent = '工单 ' + t.id + '：' + t.status + '（模拟，无外部工单系统调用）';
+            document.getElementById('approve').disabled = true;
+        } catch (e) {
+            alert(e.message);
+        }
+    }
+</script>
+</body>
+</html>

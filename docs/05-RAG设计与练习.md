@@ -2,9 +2,11 @@
 
 ## 1. 本项目的当前能力
 
-`DemoData.search()` 对虚构漏洞知识文本做了最小**词项匹配和相关性排序**。例如 `LAB-2026-0001` 可以找到文档 `KB-001`，带有固定 `source`，最后由 Java 附加到 `knowledgeEvidence`。
+`DemoData.search()` 对虚构漏洞知识文本做了最小 **词项匹配和相关性排序**。例如 `LAB-2026-0001` 可以找到文档 `KB-001`，带有固定
+`source`，最后由 Java 附加到 `knowledgeEvidence`。
 
-这是 **检索增强生成（RAG）的检索基础**，但不是向量 RAG；它没有文本分块、Embedding、向量索引、混合检索或重排。请勿在个人简历写成「已实现 pgvector 高质量语义检索」。
+这是 **检索增强生成（RAG）的检索基础**，但不是向量 RAG；它没有文本分块、Embedding、向量索引、混合检索或重排。请勿在个人简历写成「已实现
+pgvector 高质量语义检索」。
 
 ## 2. 为什么安全知识库不能只用 Embedding？
 
@@ -20,21 +22,23 @@
 
 ```sql
 -- 练习用 PostgreSQL DDL；需要安装 pgvector 后自行运行。
-CREATE EXTENSION IF NOT EXISTS vector;
-CREATE TABLE knowledge_chunk (
-  id UUID PRIMARY KEY,
-  tenant_id VARCHAR(80) NOT NULL,
-  document_id VARCHAR(80) NOT NULL,
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  advisory_id VARCHAR(100),
-  product VARCHAR(200),
-  document_version VARCHAR(80),
-  source_uri TEXT NOT NULL,
-  embedding vector(768),       -- 必须与你选用的 embedding 模型维度匹配
-  updated_at TIMESTAMP NOT NULL
+CREATE
+EXTENSION IF NOT EXISTS vector;
+CREATE TABLE knowledge_chunk
+(
+    id               UUID PRIMARY KEY,
+    tenant_id        VARCHAR(80) NOT NULL,
+    document_id      VARCHAR(80) NOT NULL,
+    title            TEXT        NOT NULL,
+    content          TEXT        NOT NULL,
+    advisory_id      VARCHAR(100),
+    product          VARCHAR(200),
+    document_version VARCHAR(80),
+    source_uri       TEXT        NOT NULL,
+    embedding        vector(768), -- 必须与你选用的 embedding 模型维度匹配
+    updated_at       TIMESTAMP   NOT NULL
 );
-CREATE INDEX idx_chunk_tenant_advisory ON knowledge_chunk(tenant_id, advisory_id);
+CREATE INDEX idx_chunk_tenant_advisory ON knowledge_chunk (tenant_id, advisory_id);
 -- 根据数据规模和 pgvector 版本选择 HNSW / IVFFlat。
 ```
 
