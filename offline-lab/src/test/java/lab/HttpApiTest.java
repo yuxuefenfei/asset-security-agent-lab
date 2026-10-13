@@ -35,7 +35,8 @@ public final class HttpApiTest {
         try (var socket = new ServerSocket(0, 0, java.net.InetAddress.getByName("127.0.0.1"))) {
             port = socket.getLocalPort();
         }
-        Path log = Files.createTempFile(Files.createDirectories(Path.of("offline-lab/target")), "lab-http-test-", ".log");
+        Path testClasses = Path.of(HttpApiTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        Path log = Files.createTempFile(Files.createDirectories(testClasses.getParent()), "lab-http-test-", ".log");
         String javaExecutable = Path.of(System.getProperty("java.home"), "bin", "java").toString();
         ProcessBuilder builder = new ProcessBuilder(javaExecutable, "-cp", System.getProperty("java.class.path"), "lab.LabServer");
         builder.environment().put("LAB_PORT", String.valueOf(port));
@@ -56,6 +57,10 @@ public final class HttpApiTest {
                 Thread.sleep(100);
             }
             if (!ready) throw new AssertionError("LabServer startup failed: " + Files.readString(log));
+            var homepage = send(client, base, "/", null, false);
+            SelfTest.eq(homepage.statusCode(), 200, "public homepage");
+            SelfTest.eq(homepage.headers().firstValue("Content-Type").orElse(""), "text/html; charset=UTF-8", "homepage content type");
+            if (!homepage.body().contains("id=\"labToken\"")) throw new AssertionError("homepage resource missing");
             SelfTest.eq(send(client, base, "/api/assets", null, false).statusCode(), 403, "missing token");
             SelfTest.eq(send(client, base, "/api/assets?ip=198.51.100.9", null, true).statusCode(), 403, "tenant HTTP gate");
             SelfTest.eq(send(client, base, "/api/assets?ip=192.0.2.123", null, true).statusCode(), 400, "unknown asset");

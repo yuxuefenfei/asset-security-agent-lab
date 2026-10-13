@@ -8,8 +8,8 @@
 
 | 工程                            | 启动环境                              | 是否依赖模型/外网      | 学习内容                                                             | 验证状态                                                       |
 |---------------------------------|---------------------------------------|------------------------|----------------------------------------------------------------------|----------------------------------------------------------------|
-| `offline-lab/`                  | JDK 21                                | 否                     | API、业务数据、Tool Dispatcher、知识检索、报告、工单和审批           | ✅ 本环境编译、自测和 HTTP 验证                                |
-| `offline-lab` 的 `llm` 模式     | JDK 21 + 支持 Tool Calling 的模型服务 | 本地 Ollama 或兼容 API | **真正模型 Tool Calling**：模型发出工具请求，Java 执行，结果返回模型 | ✅ fake LLM 两轮协议、HTTP 错误路径已验证；真实模型效果另行实测 |
+| `offline-lab/`                  | JDK 21 + Maven 3.9+                   | 首次构建需下载依赖；运行无需模型/外网 | API、业务数据、Tool Dispatcher、知识检索、报告、工单和审批           | ✅ 本环境编译、自测和 HTTP 验证                                |
+| `offline-lab` 的 `llm` 模式     | JDK 21 + Maven + 支持 Tool Calling 的模型服务 | 本地 Ollama 或兼容 API | **真正模型 Tool Calling**：模型发出工具请求，Java 执行，结果返回模型 | ✅ fake LLM 两轮协议、HTTP 错误路径已验证；真实模型效果另行实测 |
 | `spring-ai-workshop/agent-app`  | JDK 21 + Maven + Ollama               | 需要模型和 Maven 依赖  | Spring AI `ChatClient`、`@Tool`、请求级工具范围校验                  | ✅ 构建、5 项回归及 local/MCP fake 模型调用链通过；真实模型未评测 |
 | `spring-ai-workshop/mcp-server` | JDK 21 + Maven                        | 需要 Maven 依赖        | 通过 Spring AI MCP Starter 暴露 `tools/list`/`tools/call`            | ✅ 构建及 2 项 MCP HTTP 初始化、发现、调用和越权集成测试通过 |
 
@@ -18,12 +18,12 @@
 
 ## 1. 5 分钟跑通离线版
 
-**要求：JDK 21**。Linux / macOS / Windows 的 Git Bash / WSL：
+**要求：JDK 21 + Maven 3.9+**，`JAVA_HOME` 应指向 JDK 21。Linux / macOS / Windows 的 Git Bash / WSL：
 
 ```bash
-java -version
-./scripts/test-offline.sh
-./scripts/run-offline.sh
+mvn -version
+bash ./scripts/test-offline.sh
+bash ./scripts/run-offline.sh
 ```
 
 启动后打开： **http://127.0.0.1:8080**。
@@ -36,23 +36,30 @@ java -version
 
 前端点击「开始安全分析」→ 查看 `toolTrace` →「生成工单草稿」→ 输入审批码 `local-approval-only` →「人工审批草稿」。
 
-> 如果要换 HTTP 端口：`LAB_PORT=18080 ./scripts/run-offline.sh`。端口默认仅监听 `127.0.0.1`。前端实验口令默认
+> 如果要换 HTTP 端口：`LAB_PORT=18080 bash ./scripts/run-offline.sh`。端口默认仅监听 `127.0.0.1`。前端实验口令默认
 > `learn-agent-local`；如自行修改 `LAB_API_TOKEN`，请在页面口令输入框里同步修改。
 
-Windows PowerShell（没有 Bash）可手动编译；先将 `JAVA_HOME` 指向 JDK 21，并检查 `java -version`：
+Windows PowerShell：先将当前终端的 `JAVA_HOME` 指向 JDK 21：
 
 ```powershell
 # 仅修改当前终端；替换为实际 JDK 21 路径
 $env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
 $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
-java -version
-cd offline-lab
-New-Item -ItemType Directory -Force target/classes | Out-Null
-$src = Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object FullName
-javac --release 21 -encoding UTF-8 -d target/classes $src
-Copy-Item src/main/resources/index.html target/classes/index.html
-java -cp target/classes lab.LabServer
+mvn -version
+./scripts/test-offline.ps1
+./scripts/run-offline.ps1
 ```
+
+也可以从仓库根目录直接用 Maven 构建，再运行可执行 JAR：
+
+```bash
+mvn -f offline-lab/pom.xml clean verify
+java -jar offline-lab/target/offline-lab.jar
+```
+
+首次构建需要下载 Maven 插件和 JUnit 测试依赖；依赖缓存后可使用 `mvn -o -f offline-lab/pom.xml clean verify` 离线构建。应用运行时仍只依赖 JDK，不需要模型或外网。
+
+IDEA 中右键 `offline-lab/pom.xml` → **Add as Maven Project**，将项目 SDK 和 Maven 的运行 JDK 设置为 21，再运行 `lab.LabServer.main()`。Maven 导入会自动识别 `src/main/resources` 并复制首页资源；浏览器访问 `http://127.0.0.1:8080/`，不要直接访问 `/index.html`。API 仍需正确的 `X-Lab-Token`。
 
 ## 2. 核心 HTTP API
 
@@ -88,7 +95,7 @@ ollama serve
 ```bash
 export LLM_API_URL=http://127.0.0.1:11434/v1/chat/completions
 export LLM_MODEL=qwen2.5:7b
-./scripts/run-offline.sh
+bash ./scripts/run-offline.sh
 ```
 
 在浏览器模式选择 `llm`，或使用：
