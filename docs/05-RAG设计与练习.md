@@ -2,7 +2,7 @@
 
 ## 1. 本项目的当前能力
 
-`KnowledgeRepository.search()` 对虚构漏洞知识文本做了最小 **词项匹配和相关性排序**。例如 `LAB-2026-0001` 可以找到文档
+`KnowledgeService.search()` 对虚构漏洞知识文本做了最小 **词项匹配和相关性排序**。例如 `LAB-2026-0001` 可以找到文档
 `KB-001`，带有固定
 `source`，最后由 Java 附加到 `knowledgeEvidence`。
 

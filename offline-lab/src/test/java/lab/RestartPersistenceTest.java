@@ -3,12 +3,12 @@ package lab;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
-import lab.analysis.application.AnalysisService;
-import lab.analysis.persistence.AnalysisRepository;
-import lab.asset.persistence.AssetMapper;
 import lab.contract.analysis.*;
 import lab.contract.ticket.*;
-import lab.ticket.application.TicketService;
+import lab.dao.AnalysisRepository;
+import lab.dao.AssetMapper;
+import lab.service.AnalysisService;
+import lab.service.TicketService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.WebApplicationType;

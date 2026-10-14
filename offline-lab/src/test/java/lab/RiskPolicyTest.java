@@ -3,11 +3,11 @@ package lab;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
-import lab.analysis.domain.RiskPolicy;
 import lab.config.RiskProperties;
 import lab.contract.analysis.RiskLevel;
 import lab.contract.asset.*;
 import lab.contract.vulnerability.*;
+import lab.service.RiskPolicy;
 import org.junit.jupiter.api.Test;
 
 class RiskPolicyTest {

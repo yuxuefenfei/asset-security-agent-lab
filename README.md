@@ -186,13 +186,14 @@ MCP  模式：LLM -> MCP Client -> MCP Server -> REST 网关 -> 离线核心服�
 
 1. `lab-contract/src/main/java/lab/contract/`：record DTO、有限状态枚举和 API 契约。
 2. `offline-lab/src/main/resources/db/migration/`：H2 表结构、约束和虚构初始化数据。
-3. `offline-lab/src/main/java/lab/asset/`、`vulnerability/`、`knowledge/`：PO、Mapper、类型化查询与租户检查。
-4. `offline-lab/src/main/java/lab/tool/application/`：工具 Schema 构建、严格参数、任务范围与轨迹。
-5. `offline-lab/src/main/java/lab/analysis/`：分析编排、确定性评分与不可变报告快照。
-6. `offline-lab/src/main/java/lab/model/`：类型化 OpenAI 工具协议、响应容量和调用预算。
-7. `offline-lab/src/main/java/lab/ticket/`：草稿幂等、编辑、版本冲突与审批事务。
-8. `offline-lab/src/main/resources/static/assets/`：API、报告、草稿编辑与历史记录脚本。
-9. `spring-ai-workshop/`：按功能分包的 Spring AI 与 MCP 适配层。
+3. `offline-lab/src/main/java/lab/entity/`、`dao/`：PO、Mapper、数据库查询和报告快照持久化。
+4. `offline-lab/src/main/java/lab/service/`：资产授权、知识检索、分析编排、评分与工单事务。
+5. `offline-lab/src/main/java/lab/tools/`：工具 Schema 构建、严格参数、任务范围与轨迹。
+6. `offline-lab/src/main/java/lab/controller/`：HTTP 入口、输入校验和响应包装。
+7. `offline-lab/src/main/java/lab/client/`、`dto/`：模型客户端、协议数据、响应容量和调用预算。
+8. `offline-lab/src/main/java/lab/config/`、`filter/`、`exception/`、`enums/`：运行配置、请求安全、统一异常处理和内部枚举。
+9. `offline-lab/src/main/resources/static/assets/`：API、报告、草稿编辑与历史记录脚本。
+10. `spring-ai-workshop/`：按功能分包的 Spring AI 与 MCP 适配层。
 
 ## 7. 配套文档
 

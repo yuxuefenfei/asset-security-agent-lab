@@ -5,7 +5,7 @@ import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.concurrent.Semaphore;
-import lab.model.client.SystemPrompt;
+import lab.dto.SystemPrompt;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;

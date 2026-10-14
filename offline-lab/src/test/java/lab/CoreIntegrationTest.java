@@ -5,17 +5,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.fasterxml.jackson.databind.*;
 import java.util.*;
 import java.util.concurrent.*;
-import lab.analysis.application.AnalysisService;
-import lab.analysis.persistence.AnalysisRepository;
-import lab.asset.persistence.AssetMapper;
 import lab.contract.analysis.*;
 import lab.contract.ticket.*;
 import lab.contract.tool.*;
-import lab.knowledge.persistence.KnowledgeMapper;
+import lab.dao.AnalysisRepository;
+import lab.dao.AssetMapper;
+import lab.dao.KnowledgeMapper;
+import lab.enums.ErrorCode;
+import lab.exception.LabException;
+import lab.service.AnalysisService;
+import lab.service.TicketService;
 import lab.support.*;
-import lab.ticket.application.TicketService;
-import lab.tool.application.ToolSessionFactory;
-import lab.web.error.*;
+import lab.tools.ToolSessionFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -125,6 +126,38 @@ class CoreIntegrationTest {
         assertEquals(
                 400,
                 request(HttpMethod.GET, "/api/assets?ip=192.0.2.123", null, true)
+                        .getStatusCode()
+                        .value());
+    }
+
+    @Test
+    void assetQueriesPreserveTenantFilteringPaginationAndVulnerabilityScope() throws Exception {
+        var list = data(request(HttpMethod.GET, "/api/assets", null, true));
+        assertEquals(2, list.size());
+        assertEquals("ASSET-001", list.get(0).path("id").asText());
+        assertEquals("ASSET-002", list.get(1).path("id").asText());
+
+        var first = data(request(HttpMethod.GET, "/api/assets/page?page=1&size=1", null, true));
+        var second = data(request(HttpMethod.GET, "/api/assets/page?page=2&size=1", null, true));
+        assertEquals(2, first.path("total").asLong());
+        assertEquals(1, first.path("items").size());
+        assertEquals("ASSET-001", first.path("items").get(0).path("id").asText());
+        assertEquals(json.readTree("[22,80,443,8080]"), first.path("items").get(0).path("ports"));
+        assertEquals("ASSET-002", second.path("items").get(0).path("id").asText());
+        assertEquals(
+                400,
+                request(HttpMethod.GET, "/api/assets/page?size=101", null, true)
+                        .getStatusCode()
+                        .value());
+
+        var vulnerabilities =
+                data(request(HttpMethod.GET, "/api/vulnerabilities?ip=192.0.2.10", null, true));
+        assertEquals(2, vulnerabilities.size());
+        assertEquals("VULN-101", vulnerabilities.get(0).path("id").asText());
+        assertEquals("VULN-102", vulnerabilities.get(1).path("id").asText());
+        assertEquals(
+                403,
+                request(HttpMethod.GET, "/api/vulnerabilities?ip=198.51.100.9", null, true)
                         .getStatusCode()
                         .value());
     }
