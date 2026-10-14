@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>资产安全 AI Agent 实验平台</title>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script type="module" src="/assets/app.js"></script>
+</head>
+<body>
+<header><h1>资产安全 AI Agent · 入门实验平台</h1><p>Tool Calling → 知识检索 → 风险报告 → 人工审批 · 虚构训练数据，不进行真实扫描</p></header>
+<main>
+    <aside class="panel">
+        <h2>创建分析任务</h2>
+        <p class="hint">规则模式无需模型；LLM 模式需要支持 Tool Calling 的模型服务。</p>
+        <form id="analysisForm">
+            <label for="labToken">本地实验口令</label><input id="labToken" type="password" autocomplete="off" value="learn-agent-local" required>
+            <label for="ip">资产</label><select id="ip"><option value="192.0.2.10">192.0.2.10 · 订单服务</option><option value="192.0.2.20">192.0.2.20 · 测试数据库</option></select>
+            <label for="mode">执行模式</label><select id="mode"><option value="demo">demo：规则与工具追踪</option><option value="llm">llm：模型 Tool Calling</option></select>
+            <label for="question">分析任务</label><textarea id="question" maxlength="1000" required>请分析这台资产的安全风险，引用相关知识库证据并给出整改建议。</textarea>
+            <button id="run" type="submit">开始安全分析</button>
+        </form>
+        <p class="muted">请选择报告生成工单草稿，审核、保存内容后再审批。所有操作仅用于本地教学。</p>
+    </aside>
+    <div class="workspace">
+        <section class="panel" aria-labelledby="reportHeading">
+            <h2 id="reportHeading">分析结果</h2>
+            <p id="analysisStatus" class="status" role="status" aria-live="polite"></p>
+            <div id="result"><p class="muted">请选择资产并开始安全分析。</p></div>
+        </section>
+        <section class="panel" aria-labelledby="ticketHeading">
+            <h2 id="ticketHeading">工单草稿与人工审核</h2>
+            <p id="ticketHint" class="muted">分析完成后，可生成并预览整改工单草稿。</p>
+            <div class="actions"><button id="draft" type="button" disabled>生成工单草稿</button><button id="refreshTicket" type="button" class="secondary" disabled>重新加载草稿</button></div>
+            <p id="ticketStatus" class="status" role="status" aria-live="polite"></p>
+            <div id="ticketPreview" hidden>
+                <p id="ticketMetadata"></p>
+                <details open><summary>关联报告的证据与风险</summary><div id="ticketEvidence"></div></details>
+                <fieldset id="ticketEditor">
+                    <label for="ticketTitle">工单标题</label><input id="ticketTitle" maxlength="200" required>
+                    <label for="remediation">整改建议</label><textarea id="remediation" maxlength="4000" required></textarea>
+                    <label for="ticketNote">审核备注</label><textarea id="ticketNote" maxlength="2000"></textarea>
+                </fieldset>
+                <p id="unsavedHint" class="muted" aria-live="polite"></p>
+                <div class="actions"><button id="saveTicket" type="button" disabled>保存草稿修改</button></div>
+                <label for="code">本地审批码</label><input id="code" type="password" autocomplete="off" placeholder="输入本地演示审批码">
+                <button id="approve" type="button" disabled>人工审批当前草稿</button>
+            </div>
+        </section>
+        <section class="panel" aria-labelledby="historyHeading">
+            <h2 id="historyHeading">历史记录</h2>
+            <p class="muted">查看历史分析与工单，重新打开后可继续审核未审批的草稿。</p>
+            <p id="historyStatus" role="status" aria-live="polite"></p>
+            <h3>分析报告</h3><ul id="analysisHistory" class="history-list"></ul>
+            <div class="history-controls"><button id="analysisPrev" class="secondary" type="button">上一页</button><span id="analysisPage"></span><button id="analysisNext" class="secondary" type="button">下一页</button></div>
+            <h3>工单</h3><ul id="ticketHistory" class="history-list"></ul>
+            <div class="history-controls"><button id="ticketPrev" class="secondary" type="button">上一页</button><span id="ticketPage"></span><button id="ticketNext" class="secondary" type="button">下一页</button></div>
+            <button id="refreshHistory" class="secondary" type="button">刷新记录</button>
+        </section>
+    </div>
+</main>
+</body>
+</html>

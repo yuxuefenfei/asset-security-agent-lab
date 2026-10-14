@@ -4,6 +4,12 @@ server:
 spring:
   application:
     name: asset-agent-spring-ai
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+      fail-on-numbers-for-enums: true
+    mapper:
+      allow-coercion-of-scalars: false
   ai:
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
@@ -19,6 +25,9 @@ lab:
   api-token: ${LAB_API_TOKEN:learn-agent-local}
   tool-backend: local
   allowed-ip: 192.0.2.10
+  max-query-length: 200
+  connect-timeout: 3s
+  request-timeout: 10s
 ---
 spring:
   config:

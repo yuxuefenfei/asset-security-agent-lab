@@ -15,3 +15,6 @@ lab:
   core-url: http://127.0.0.1:8080
   api-token: ${LAB_API_TOKEN:learn-agent-local}
   allowed-ip: 192.0.2.10
+  max-query-length: 200
+  connect-timeout: 3s
+  request-timeout: 10s

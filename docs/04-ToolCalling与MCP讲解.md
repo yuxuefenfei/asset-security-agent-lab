@@ -8,7 +8,7 @@
 
 ## B. 手写模型交互（不是假 Agent）
 
-在 `ModelToolAgent.java` 中，工具以 OpenAI 兼容格式传入：
+在 `ModelClient.java` 中，工具以 OpenAI 兼容格式传入：
 
 ```json
 {
@@ -53,9 +53,9 @@
 }
 ```
 
-**模型没有执行 Java**。`ScopedTools.call()` 真正执行工具，结果通过下一条 `role=tool` 消息返回模型，模型可继续调用其他工具或回答。
+**模型没有执行 Java**。`ToolSession.call()` 真正执行工具，结果通过下一条 `role=tool` 消息返回模型，模型可继续调用其他工具或回答。
 
-在单元测试 `FakeModelTest.java` 中可以找到真实的 **两轮协议对话**，不依赖任何模型即可验证这个机制。
+在单元测试 `CoreIntegrationTest.java` 中可以找到真实的 **两轮协议对话**，不依赖任何模型即可验证这个机制。
 
 ## C. MCP 是什么、不是什么
 
@@ -102,7 +102,7 @@ sequenceDiagram
 
 ## E. 框架迁移练习
 
-1. 在 `ScopedTools` 添加 `get_asset_ports(ip)`；重新运行测试。
+1. 在 `ToolSession` 添加 `get_asset_ports(ip)`；重新运行测试。
 2. 在 `RequestScopedAssetTools` 添加对应的 `@Tool` 方法；若要保持 `get_asset_ports` 这一工具名，需要显式设置 `@Tool(name = "get_asset_ports")`。
 3. 在 `McpAssetTools` 添加对应的 `@Tool` 方法并注册为回调；框架示例现有方法默认采用 `getAsset`、`getVulnerabilities`、`searchKnowledge`，与离线版蛇形工具名不同，MCP Client 还可能添加连接前缀。
 4. 分别通过 Spring AI local 和 MCP profile 询问模型资产有哪些开放端口。

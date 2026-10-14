@@ -1,0 +1,56 @@
+server:
+  address: 127.0.0.1
+  port: ${LAB_PORT:8080}
+  tomcat:
+    threads:
+      max: 32
+    accept-count: 32
+spring:
+  application:
+    name: asset-security-core
+  datasource:
+    url: ${LAB_DB_URL:jdbc:h2:file:./data/asset-security}
+    username: ${LAB_DB_USER:sa}
+    password: ${LAB_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 8
+  flyway:
+    enabled: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+      fail-on-numbers-for-enums: true
+    mapper:
+      allow-coercion-of-scalars: false
+lab:
+  security:
+    api-token: ${LAB_API_TOKEN:learn-agent-local}
+    approval-code: ${LAB_APPROVAL_CODE:local-approval-only}
+    tenant-id: tenant-blue
+    reviewer: local-lab-reviewer
+  policy:
+    max-question-length: 1000
+    max-query-length: 200
+    max-body-bytes: 16384
+    knowledge-limit: 3
+    api-knowledge-limit: 5
+    legacy-list-limit: 100
+    max-page-size: 100
+  risk:
+    exposure-bonus: 10
+    high-criticality-bonus: 5
+    max-risk-score: 100
+    high-threshold: 80
+    medium-threshold: 50
+  model:
+    endpoint: ${LLM_API_URL:http://127.0.0.1:11434/v1/chat/completions}
+    model: ${LLM_MODEL:qwen2.5:7b}
+    api-key: ${LLM_API_KEY:}
+    connect-timeout: 8s
+    request-timeout: 75s
+    total-timeout: 120s
+    max-rounds: 6
+    max-tool-calls: 24
+    max-response-bytes: 1048576
+    max-concurrent-analyses: 4
+    temperature: 0.1

@@ -1,72 +1,88 @@
 # 第 3 课：API 运行与审批全链路
 
-离线核心默认监听 `http://127.0.0.1:8080`。除首页外，请求头必须带 `X-Lab-Token: learn-agent-local`；默认值可通过 `LAB_API_TOKEN` 修改。这是本地实验口令，不提供正式身份认证。
+核心默认监听 `http://127.0.0.1:8080`。首页与列出的静态资源无需口令，API 请求头必须带 `X-Lab-Token: learn-agent-local`
+；默认值可通过 `LAB_API_TOKEN` 修改。
 
-## 1. 离线 API 清单
+## 1. 核心 API 清单
 
-| 方法 | 路径 | 参数与默认值 | 说明 |
-|------|------|--------------|------|
-| GET | `/` | 无 | 教学工作台，无需实验口令 |
-| GET | `/api/health` | 无 | 进程探针，仍需实验口令 |
-| GET | `/api/assets` | `ip` 可选 | 不传时返回固定租户资产；传入时校验租户 |
-| GET | `/api/vulnerabilities` | `ip` 必选 | 授权资产的虚构扫描记录 |
-| GET | `/api/knowledge` | `q` 可选，最多 200 字符 | 空查询返回 `[]`，最多返回 5 条共享教学资料 |
-| GET | `/api/tools` | 无 | 3 个只读工具的 OpenAI 兼容 Schema |
-| POST | `/api/analyze` | `ip` 必选；`mode=demo`；`question=分析资产安全风险` | `mode` 仅支持 demo / llm |
-| GET | `/api/analyses` | 无 | 当前 JVM 中的全部报告，按时间降序 |
-| POST | `/api/tickets/draft` | `analysisId` 必选 | 同一分析只创建一份内存草稿 |
-| POST | `/api/tickets/approve` | `ticketId, approvalCode` 必选 | 记录模拟人工审批 |
-| GET | `/api/tickets` | 无 | 当前 JVM 中的工单，无分页及排序保证 |
+| 方法 | 路径                   | 参数                             | 说明                               |
+|------|------------------------|----------------------------------|------------------------------------|
+| GET  | `/`                    | 无                               | 教学工作台                         |
+| GET  | `/api/health`          | 无                               | 需要实验口令的健康检查             |
+| GET  | `/api/assets`          | 可选 `ip`                        | 单个授权资产或兼容数组列表         |
+| GET  | `/api/assets/page`     | `page=1,size=20`                 | 数据库分页                         |
+| GET  | `/api/vulnerabilities` | `ip`                             | 先校验资产租户再查询扫描记录       |
+| GET  | `/api/knowledge`       | `q`，最长 200 字                 | 空白查询返回空数组，数据库加权排序 |
+| POST | `/api/analyze`         | `ip`，可选 `question,mode`       | 模式 demo/llm；问题最长 1000 字    |
+| GET  | `/api/analyses`        | 无                               | 兼容报告数组，最多默认 100 条      |
+| GET  | `/api/analyses/page`   | `page,size`                      | 报告摘要与分页元数据               |
+| GET  | `/api/analyses/{id}`   | 报告 ID                          | 分析时的不可变快照                 |
+| POST | `/api/tickets/draft`   | `analysisId`                     | 同一分析唯一草稿，重试返回已有记录 |
+| PUT  | `/api/tickets/{id}`    | `title,remediation,note,version` | 编辑未审批草稿，成功后版本递增     |
+| POST | `/api/tickets/approve` | `ticketId,approvalCode,version`  | 审批当前已审核版本并锁定内容       |
+| GET  | `/api/tickets`         | 无                               | 兼容工单数组，最多默认 100 条      |
+| GET  | `/api/tickets/page`    | `page,size`                      | 数据库分页与稳定排序               |
+| GET  | `/api/tickets/{id}`    | 工单 ID                          | 获取完整内容与当前版本             |
+| GET  | `/api/tools`           | 无                               | 只读工具定义                       |
 
-成功响应为 `{"success":true,"data":...}`；错误响应为 `{"success":false,"error":"说明"}`。JSON POST 必须使用 `Content-Type: application/json`，请求体最多 16 KiB。带有效口令访问未知路径或不支持的方法返回 404。
+成功响应保留 `{success:true,data:...}`。错误响应为 `{success:false,error:"说明",code:"错误码",traceId:"请求编号"}`。JSON
+POST/PUT 使用 `Content-Type: application/json`，默认最多 16 KiB；非法类型、额外字段或越界参数返回 400。未知路径及不支持的方法返回
+404。
 
-报告时间、工单时间和健康检查时间采用 `Instant` 的 ISO-8601 UTC 格式，例如 `2026-10-12T00:00:00Z`。所有业务数据仅在内存中，重启丢失；报告和工单列表未设置数量上限。
+页码从 1 开始，最大页大小默认 100。分页响应的 data 含 `items,page,size,total`，排序有稳定 ID 作为相同时间的次序键。旧数组接口最多返回
+`lab.policy.legacy-list-limit` 条，完整历史请使用分页接口。
+
+报告、工单和健康时间保留 ISO-8601 UTC 格式。开发使用 H2 文件库，数据重启后保留；测试库与开发库隔离。
 
 ## 2. 从分析到审批
 
 ```bash
-# STEP A: 获取演示风险报告，复制 data.id
+# A：创建分析，复制 data.id
 curl -s -X POST http://127.0.0.1:8080/api/analyze \
   -H 'X-Lab-Token: learn-agent-local' -H 'Content-Type: application/json' \
   -d '{"ip":"192.0.2.10","mode":"demo","question":"查询模拟漏洞及修复建议"}'
 
-# STEP B: 替换上一步返回的 data.id
+# B：生成草稿，复制返回的 data.id 和 data.version
 curl -s -X POST http://127.0.0.1:8080/api/tickets/draft \
   -H 'X-Lab-Token: learn-agent-local' -H 'Content-Type: application/json' \
-  -d '{"analysisId":"<替换成第一步 data.id>"}'
+  -d '{"analysisId":"<分析 data.id>"}'
 
-# STEP C: 替换草稿响应的 data.id，不要假定它一定是 TICKET-0001
+# C：可选编辑；使用 B 返回的当前 version，成功后复制新的 version
+curl -s -X PUT 'http://127.0.0.1:8080/api/tickets/<工单 data.id>' \
+  -H 'X-Lab-Token: learn-agent-local' -H 'Content-Type: application/json' \
+  -d '{"title":"人工审核的标题","remediation":"确认维护窗口，修复后复测","note":"已审核证据","version":0}'
+
+# D：审核最新内容后审批；示例 version=1 对应刚完成一次编辑
 curl -s -X POST http://127.0.0.1:8080/api/tickets/approve \
   -H 'X-Lab-Token: learn-agent-local' -H 'Content-Type: application/json' \
-  -d '{"ticketId":"<替换成草稿 data.id>","approvalCode":"local-approval-only"}'
+  -d '{"ticketId":"<工单 data.id>","approvalCode":"local-approval-only","version":1}'
 
-# STEP D: 查看结果
-curl -s -H 'X-Lab-Token: learn-agent-local' http://127.0.0.1:8080/api/tickets
+curl -s -H 'X-Lab-Token: learn-agent-local' 'http://127.0.0.1:8080/api/tickets/page?page=1&size=20'
 ```
 
-预期工单 `DRAFT -> APPROVED`。同一分析重复请求草稿返回已有工单；重复审批返回 400。审批码可通过 `LAB_APPROVAL_CODE` 修改，`approvedBy` 固定为 `local-lab-reviewer`，不代表已认证的真实操作者。不会调用扫描器或外部工单平台。
+必须使用实际响应中的版本号；不编辑的新草稿通常为 0。`note:null` 表示清空备注，其余内容字段为完整替换。审批后为 `APPROVED`
+，标题、整改建议和备注不可再修改。再次生成同一分析的草稿返回同一工单。
+
+**确认的兼容例外**：审批请求现在必须带 `version`，缺少版本返回 400，过期版本返回 409；已审批工单以当前版本再次审批返回
+400。审批码通过 `LAB_APPROVAL_CODE` 配置，操作者默认 `local-lab-reviewer`，仅为模拟标识，不代表真实身份认证。
 
 ## 3. 故意触发失败
 
 ```bash
 # 无口令：403
 curl -i http://127.0.0.1:8080/api/assets
-
 # 跨租户：403
-curl -i 'http://127.0.0.1:8080/api/assets?ip=198.51.100.9' \
-  -H 'X-Lab-Token: learn-agent-local'
-
+curl -i 'http://127.0.0.1:8080/api/assets?ip=198.51.100.9' -H 'X-Lab-Token: learn-agent-local'
 # 不存在的资产：400
-curl -i 'http://127.0.0.1:8080/api/assets?ip=192.0.2.123' \
-  -H 'X-Lab-Token: learn-agent-local'
-
-# 错误审批码：403，需先创建草稿
+curl -i 'http://127.0.0.1:8080/api/assets?ip=192.0.2.123' -H 'X-Lab-Token: learn-agent-local'
+# 缺少审批版本：400
 curl -i -X POST http://127.0.0.1:8080/api/tickets/approve \
   -H 'X-Lab-Token: learn-agent-local' -H 'Content-Type: application/json' \
-  -d '{"ticketId":"<替换成草稿 data.id>","approvalCode":"wrong-code"}'
+  -d '{"ticketId":"<工单 data.id>","approvalCode":"local-approval-only"}'
 ```
 
-`llm` 模式中，模型连接失败、HTTP 错误、格式错误、空 `choices`、超过循环上限统一返回 502。错误响应不透传模型服务的原始响应内容。单个工具因越权或参数错误而被拒绝时，调用错误会返回模型；模型仍可能继续并给出最终解释。
+模型连接失败、上游非成功状态、格式错误、空 choices、调用轮数/工具次数/响应容量/总时间超限统一返回
+502，不保存成功报告，不透传上游原始内容。并发分析容量耗尽返回 429。内部未预期错误返回 500，响应中保留 traceId 供日志定位。
 
 ## 4. 报告与工具轨迹
 
@@ -110,12 +126,14 @@ curl -i -X POST http://127.0.0.1:8080/api/tickets/approve \
 }
 ```
 
-此接口没有 `success/data` 外层，不保存报告、评分或工单。默认目标白名单仅允许 `192.0.2.10`，越权请求在联系模型前返回 403；参数不合法返回 400，已映射的模型/工具服务异常返回 502，错误体为 `{"error":"说明"}`。Spring 示例没有正式身份认证，也不要求 `X-Lab-Token`；工具网关向核心 API 转发时才添加配置的实验口令。
+此接口没有 `success/data` 外层，不保存报告、评分或工单。默认目标白名单仅允许 `192.0.2.10`，越权请求在联系模型前返回
+403；参数不合法返回 400，已映射的模型/工具服务异常返回 502，错误体为 `{"error":"说明","code":"错误码","traceId":"请求编号"}`
+。Spring 示例没有正式身份认证，也不要求 `X-Lab-Token`；工具网关向核心 API 转发时才添加配置的实验口令。
 
 ## 6. 断点调试建议
 
-- `AgentService.analyze()`：观察模型调用前已计算的评分和证据。
-- `ModelToolAgent.reason()`：观察每轮 `messages` 和 `tool_calls`。
-- `ScopedTools.call()`：观察工具白名单、参数和资产范围校验。
+- `AnalysisService.analyze()`：观察模型调用前已计算的评分和证据。
+- `ModelClient.reason()`：观察每轮 `messages` 和 `tool_calls`。
+- `ToolSession.call()`：观察工具白名单、参数和资产范围校验。
 - `toolTrace.origin`：区分固定编排与模型请求。
 - `report.summary`：辅助解释，不是可靠的独立安全证据。

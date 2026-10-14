@@ -6,3 +6,8 @@
 *.log
 .env
 *.iml
+*.mv.db
+*.trace.db
+node_modules/
+test-results/
+playwright-report/
