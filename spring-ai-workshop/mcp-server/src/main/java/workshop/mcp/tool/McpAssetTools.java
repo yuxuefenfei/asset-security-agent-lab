@@ -29,7 +29,7 @@ public class McpAssetTools {
         return client.get()
                 .uri(uri -> uri.path("/api/assets").queryParam("ip", ip).build())
                 .retrieve()
-                .body(new ParameterizedTypeReference<ApiResponse<AssetResponse>>() {});
+                .body(new ParameterizedTypeReference<>() {});
     }
 
     @Tool(description = "MCP：查询授权资产漏洞。只读、虚构演示数据")
@@ -39,9 +39,7 @@ public class McpAssetTools {
         return client.get()
                 .uri(uri -> uri.path("/api/vulnerabilities").queryParam("ip", ip).build())
                 .retrieve()
-                .body(
-                        new ParameterizedTypeReference<
-                                ApiResponse<List<VulnerabilityResponse>>>() {});
+                .body(new ParameterizedTypeReference<>() {});
     }
 
     @Tool(description = "MCP：按编号查询安全知识库")
@@ -52,6 +50,6 @@ public class McpAssetTools {
         return client.get()
                 .uri(uri -> uri.path("/api/knowledge").queryParam("q", query).build())
                 .retrieve()
-                .body(new ParameterizedTypeReference<ApiResponse<List<KnowledgeResponse>>>() {});
+                .body(new ParameterizedTypeReference<>() {});
     }
 }

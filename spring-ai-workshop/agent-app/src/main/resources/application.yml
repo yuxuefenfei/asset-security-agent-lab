@@ -11,19 +11,20 @@ spring:
     mapper:
       allow-coercion-of-scalars: false
   ai:
-    ollama:
-      base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
+    openai:
+      base-url: ${LLM_BASE_URL}
+      api-key: ${LLM_API_KEY}
       chat:
+        completions-path: /v1/chat/completions
         options:
-          model: ${OLLAMA_MODEL:qwen2.5:7b}
-          temperature: 0.1
+          model: ${LLM_MODEL}
     mcp:
       client:
         enabled: false
 lab:
   core-url: http://127.0.0.1:8080
   api-token: ${LAB_API_TOKEN:learn-agent-local}
-  tool-backend: local
+  tool-backend: mcp
   allowed-ip: 192.0.2.10
   max-query-length: 200
   connect-timeout: 3s

@@ -27,7 +27,7 @@ public class CoreLabGateway {
         return client.get()
                 .uri(uri -> uri.path("/api/assets").queryParam("ip", ip).build())
                 .retrieve()
-                .body(new ParameterizedTypeReference<ApiResponse<AssetResponse>>() {});
+                .body(new ParameterizedTypeReference<>() {});
     }
 
     public ApiResponse<List<VulnerabilityResponse>> getVulnerabilities(String ip) {
@@ -35,9 +35,7 @@ public class CoreLabGateway {
         return client.get()
                 .uri(uri -> uri.path("/api/vulnerabilities").queryParam("ip", ip).build())
                 .retrieve()
-                .body(
-                        new ParameterizedTypeReference<
-                                ApiResponse<List<VulnerabilityResponse>>>() {});
+                .body(new ParameterizedTypeReference<>() {});
     }
 
     public ApiResponse<List<KnowledgeResponse>> searchKnowledge(String query) {
@@ -46,6 +44,6 @@ public class CoreLabGateway {
         return client.get()
                 .uri(uri -> uri.path("/api/knowledge").queryParam("q", query).build())
                 .retrieve()
-                .body(new ParameterizedTypeReference<ApiResponse<List<KnowledgeResponse>>>() {});
+                .body(new ParameterizedTypeReference<>() {});
     }
 }
