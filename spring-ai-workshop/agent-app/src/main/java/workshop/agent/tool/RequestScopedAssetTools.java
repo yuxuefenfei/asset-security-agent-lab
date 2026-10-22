@@ -15,6 +15,7 @@ public class RequestScopedAssetTools {
     private final CoreLabGateway gateway;
     private final String allowedIp;
 
+    // 请求范围对象绑定当前目标，模型传参不能扩大到同一服务允许的其他目标。
     private void check(String ip) {
         if (!allowedIp.equals(ip)) throw new SecurityException("越权调用资产：" + ip);
         gateway.verifyIp(ip);

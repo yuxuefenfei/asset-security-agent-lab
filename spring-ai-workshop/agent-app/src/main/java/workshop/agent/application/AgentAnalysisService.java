@@ -20,10 +20,12 @@ public class AgentAnalysisService {
     private final AgentPrompt prompt;
 
     public AgentResponse analyze(AgentRequest request) {
+        // 在模型调用之前拒绝越权目标；工具执行时网关仍会再次检查固定 IP。
         gateway.verifyIp(request.ip());
         String instruction = "分析资产 " + request.ip() + "。任务：" + request.question();
         String output;
         if (config.toolBackend() == ToolBackend.MCP) {
+            // MCP 模式依赖已连接的回调提供方，没有自动降级；local 必须显式配置。
             var provider =
                     providers
                             .orderedStream()
@@ -35,6 +37,7 @@ public class AgentAnalysisService {
                             .prompt()
                             .system(prompt.text())
                             .user(instruction)
+                            // provider 已提供工具定义与执行器，应注册回调而不是扫描 @Tool 方法。
                             .toolCallbacks(provider)
                             .call()
                             .content();
@@ -48,6 +51,7 @@ public class AgentAnalysisService {
                             .call()
                             .content();
         }
+        // 此服务只演示工具接入，不经过核心 AnalysisService，不保存评分报告或工单。
         return new AgentResponse(
                 config.toolBackend(), request.ip(), output == null ? "" : output, "模拟数据，内容必须人工复核");
     }

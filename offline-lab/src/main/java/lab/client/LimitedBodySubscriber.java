@@ -28,12 +28,14 @@ final class LimitedBodySubscriber implements HttpResponse.BodySubscriber<String>
     @Override
     public void onSubscribe(Flow.Subscription value) {
         subscription = value;
+        // 每次只申请一批数据，处理完再继续，避免无节制地缓存上游响应。
         value.request(1);
     }
 
     @Override
     public void onNext(List<ByteBuffer> buffers) {
         for (var buffer : buffers) {
+            // 在分配并写入当前块之前检查剩余额度，超限立即取消订阅。
             if (buffer.remaining() > limit - bytes.size()) {
                 subscription.cancel();
                 body.completeExceptionally(new IOException("模型响应超过容量上限"));

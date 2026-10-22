@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
-
 import lab.contract.agent.ToolBackend;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;

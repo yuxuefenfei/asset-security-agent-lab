@@ -35,6 +35,7 @@ public class AnalysisRepository {
     private final ObjectMapper json;
     private final SecurityProperties security;
 
+    // 报告主记录、知识正文与轨迹必须一起提交，避免出现只有摘要的半份报告。
     @Transactional
     public void save(AnalysisReport report) {
         var row = new AnalysisPO();
@@ -77,6 +78,7 @@ public class AnalysisRepository {
         }
     }
 
+    // 从保存时的 JSON 与证据表还原，不关联当前资产/知识，确保历史结论可追溯。
     @Transactional(readOnly = true)
     public AnalysisReport get(String id) {
         var row =
@@ -145,19 +147,27 @@ public class AnalysisRepository {
     }
 
     public PageResponse<AnalysisSummary> page(long page, long size) {
+        return page(page, size, "", null, null);
+    }
+
+    public PageResponse<AnalysisSummary> page(
+            long page, long size, String q, RiskLevel riskLevel, AnalysisMode mode) {
+        var query = baseQuery();
+        if (!q.isEmpty()) query.and(ANALYSIS.ASSET_IP.like(q).or(ANALYSIS.ID.like(q)));
+        if (riskLevel != null) query.and(ANALYSIS.RISK_LEVEL.eq(riskLevel));
+        if (mode != null) query.and(ANALYSIS.MODE.eq(mode));
         var result =
                 analyses.paginate(
                         page,
                         size,
-                        baseQuery()
-                                .select(
-                                        ANALYSIS.ID,
-                                        ANALYSIS.CREATED_AT,
-                                        ANALYSIS.MODE,
-                                        ANALYSIS.ASSET_IP,
-                                        ANALYSIS.RISK_SCORE,
-                                        ANALYSIS.RISK_LEVEL,
-                                        ANALYSIS.STATUS));
+                        query.select(
+                                ANALYSIS.ID,
+                                ANALYSIS.CREATED_AT,
+                                ANALYSIS.MODE,
+                                ANALYSIS.ASSET_IP,
+                                ANALYSIS.RISK_SCORE,
+                                ANALYSIS.RISK_LEVEL,
+                                ANALYSIS.STATUS));
         return new PageResponse<>(
                 result.getRecords().stream()
                         .map(
@@ -176,6 +186,7 @@ public class AnalysisRepository {
                 result.getTotalRow());
     }
 
+    // 租户条件由服务端配置提供，不能由搜索词或模型参数改变。
     private QueryWrapper baseQuery() {
         return QueryWrapper.create()
                 .where(ANALYSIS.TENANT_ID.eq(security.tenantId()))

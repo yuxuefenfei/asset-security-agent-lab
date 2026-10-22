@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -35,6 +36,7 @@ class CoreIntegrationTest {
     @Autowired ToolSessionFactory sessions;
     @Autowired AssetMapper assets;
     @Autowired KnowledgeMapper knowledge;
+    @Autowired JdbcTemplate database;
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry p) {
@@ -78,9 +80,13 @@ class CoreIntegrationTest {
     void homepageAndProtectedApiContract() throws Exception {
         var homepage = http.getForEntity("/", String.class);
         assertEquals(200, homepage.getStatusCode().value());
-        assertTrue(homepage.getBody().contains("id=\"labToken\""));
+        assertTrue(homepage.getBody().contains("id=\"app\""));
+        assertEquals(200, http.getForEntity("/favicon.svg", String.class).getStatusCode().value());
         assertEquals(
-                200, http.getForEntity("/assets/app.js", String.class).getStatusCode().value());
+                404,
+                http.getForEntity("/assets/runtime-core.esm-bundler-missing.js", String.class)
+                        .getStatusCode()
+                        .value());
         var denied = request(HttpMethod.GET, "/api/health", null, false);
         assertEquals(403, denied.getStatusCode().value());
         var error = json.readTree(denied.getBody());
@@ -92,6 +98,95 @@ class CoreIntegrationTest {
                 data(request(HttpMethod.GET, "/api/health", null, true)).get("status").asText());
         assertEquals(
                 404, request(HttpMethod.GET, "/api/missing", null, true).getStatusCode().value());
+    }
+
+    @Test
+    void workbenchQueriesFilterInDatabaseAndKeepTenantScope() throws Exception {
+        var stats = data(request(HttpMethod.GET, "/api/dashboard", null, true));
+        assertEquals(32, stats.path("assetCount").asLong());
+        assertEquals(10, stats.path("exposedAssetCount").asLong());
+        assertEquals(
+                403,
+                request(HttpMethod.GET, "/api/dashboard", null, false).getStatusCode().value());
+        var filtered =
+                data(
+                        request(
+                                HttpMethod.GET,
+                                "/api/assets/page?q=192.0.2.10&exposed=true&criticality=HIGH",
+                                null,
+                                true));
+        assertEquals(1, filtered.path("total").asLong());
+        assertEquals("ASSET-001", filtered.path("items").get(0).path("id").asText());
+        assertEquals(
+                0,
+                data(request(HttpMethod.GET, "/api/assets/page?q=198.51.100.9", null, true))
+                        .path("total")
+                        .asLong());
+        assertEquals(
+                0,
+                data(request(HttpMethod.GET, "/api/assets/page?q=_", null, true))
+                        .path("total")
+                        .asLong());
+        assertEquals(
+                400,
+                request(HttpMethod.GET, "/api/assets/page?q=" + "x".repeat(201), null, true)
+                        .getStatusCode()
+                        .value());
+        var allKnowledge = data(request(HttpMethod.GET, "/api/knowledge/page?size=1", null, true));
+        assertTrue(allKnowledge.path("total").asLong() > 1);
+        assertEquals(1, allKnowledge.path("items").size());
+        String knowledgeId = allKnowledge.path("items").get(0).path("id").asText();
+        assertEquals(
+                knowledgeId,
+                data(request(HttpMethod.GET, "/api/knowledge/" + knowledgeId, null, true))
+                        .path("id")
+                        .asText());
+        assertEquals(
+                0,
+                data(request(HttpMethod.GET, "/api/knowledge/page?q=___", null, true))
+                        .path("total")
+                        .asLong());
+        var report = report("192.0.2.20");
+        var draft = tickets.draft(report.id());
+        var reportPage =
+                data(
+                        request(
+                                HttpMethod.GET,
+                                "/api/analyses/page?q="
+                                        + report.id()
+                                        + "&riskLevel=MEDIUM&mode=DEMO",
+                                null,
+                                true));
+        assertEquals(1, reportPage.path("total").asLong());
+        var ticketPage =
+                data(
+                        request(
+                                HttpMethod.GET,
+                                "/api/tickets/page?status=DRAFT&analysisId=" + report.id(),
+                                null,
+                                true));
+        assertEquals(1, ticketPage.path("total").asLong());
+        assertEquals(draft.id(), ticketPage.path("items").get(0).path("id").asText());
+        assertEquals(
+                0,
+                data(request(
+                                HttpMethod.GET,
+                                "/api/tickets/page?status=APPROVED&analysisId=" + report.id(),
+                                null,
+                                true))
+                        .path("total")
+                        .asLong());
+        assertEquals(
+                400,
+                request(HttpMethod.GET, "/api/knowledge/page?size=101", null, true)
+                        .getStatusCode()
+                        .value());
+        assertEquals(
+                403,
+                http.getForEntity("/assets/private.json", String.class).getStatusCode().value());
+        assertEquals(
+                403,
+                http.getForEntity("/assets/nested/test.js", String.class).getStatusCode().value());
     }
 
     @Test
@@ -133,13 +228,13 @@ class CoreIntegrationTest {
     @Test
     void assetQueriesPreserveTenantFilteringPaginationAndVulnerabilityScope() throws Exception {
         var list = data(request(HttpMethod.GET, "/api/assets", null, true));
-        assertEquals(2, list.size());
+        assertEquals(32, list.size());
         assertEquals("ASSET-001", list.get(0).path("id").asText());
         assertEquals("ASSET-002", list.get(1).path("id").asText());
 
         var first = data(request(HttpMethod.GET, "/api/assets/page?page=1&size=1", null, true));
         var second = data(request(HttpMethod.GET, "/api/assets/page?page=2&size=1", null, true));
-        assertEquals(2, first.path("total").asLong());
+        assertEquals(32, first.path("total").asLong());
         assertEquals(1, first.path("items").size());
         assertEquals("ASSET-001", first.path("items").get(0).path("id").asText());
         assertEquals(json.readTree("[22,80,443,8080]"), first.path("items").get(0).path("ports"));
@@ -158,6 +253,47 @@ class CoreIntegrationTest {
         assertEquals(
                 403,
                 request(HttpMethod.GET, "/api/vulnerabilities?ip=198.51.100.9", null, true)
+                        .getStatusCode()
+                        .value());
+    }
+
+    @Test
+    void expandedSeedsSupportPaginationAnalysisAndTenantIsolation() throws Exception {
+        assertEquals(38, database.queryForObject("SELECT COUNT(*) FROM lab_asset", Integer.class));
+        assertEquals(
+                107, database.queryForObject("SELECT COUNT(*) FROM lab_asset_port", Integer.class));
+        assertEquals(
+                100,
+                database.queryForObject("SELECT COUNT(*) FROM lab_vulnerability", Integer.class));
+        assertEquals(
+                16, database.queryForObject("SELECT COUNT(*) FROM lab_knowledge", Integer.class));
+        assertEquals(
+                3,
+                database.queryForObject(
+                        "SELECT COUNT(DISTINCT status) FROM lab_vulnerability", Integer.class));
+        assertEquals(
+                4,
+                database.queryForObject(
+                        "SELECT COUNT(DISTINCT severity) FROM lab_vulnerability", Integer.class));
+        var lastPage = data(request(HttpMethod.GET, "/api/assets/page?page=4&size=10", null, true));
+        assertEquals(32, lastPage.path("total").asLong());
+        assertEquals(2, lastPage.path("items").size());
+        assertTrue(lastPage.path("items").findValuesAsText("ip").contains("192.0.2.59"));
+
+        var expanded = report("192.0.2.30");
+        assertEquals(4, expanded.vulnerabilities().size());
+        assertEquals(4, expanded.knowledgeEvidence().size());
+        assertTrue(
+                expanded.knowledgeEvidence().stream().anyMatch(item -> item.id().equals("KB-101")));
+        assertEquals(6, expanded.toolTrace().size());
+        var healthy = report("192.0.2.38");
+        assertTrue(healthy.vulnerabilities().isEmpty());
+        assertTrue(healthy.knowledgeEvidence().isEmpty());
+        assertEquals(0, healthy.riskScore());
+        assertEquals(RiskLevel.LOW, healthy.riskLevel());
+        assertEquals(
+                403,
+                request(HttpMethod.GET, "/api/vulnerabilities?ip=198.51.100.20", null, true)
                         .getStatusCode()
                         .value());
     }

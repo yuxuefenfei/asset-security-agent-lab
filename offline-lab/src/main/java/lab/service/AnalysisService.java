@@ -15,6 +15,7 @@ import lab.tools.ToolSessionFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/** 编排单资产分析：规则负责评分，模型只补充解释，成功后才保存报告快照。 */
 @Service
 @RequiredArgsConstructor
 public class AnalysisService {
@@ -32,8 +33,10 @@ public class AnalysisService {
         if (question.isBlank() || question.length() > policy.maxQuestionLength())
             throw new IllegalArgumentException("问题不能为空或超过" + policy.maxQuestionLength() + "字");
         AnalysisMode mode = request.mode() == null ? AnalysisMode.DEMO : request.mode();
+        // 容量覆盖本次分析全流程；tryAcquire 不排队，避免 HTTP 请求无限等待。
         if (!capacity.tryAcquire()) throw new LabException(ErrorCode.TOO_BUSY, "分析任务繁忙，请稍后重试");
         try {
+            // 会话工厂先校验租户并固定资产/漏洞；以下预查询同样进入成功工具轨迹。
             var tools = sessions.create(request.ip());
             tools.call(ToolName.GET_ASSET, tools.ipArguments(), ToolOrigin.JAVA_ORCHESTRATOR);
             tools.call(
@@ -45,6 +48,7 @@ public class AnalysisService {
                         ToolName.SEARCH_KNOWLEDGE,
                         tools.queryArguments(vulnerability.advisory()),
                         ToolOrigin.JAVA_ORCHESTRATOR);
+            // 在联系模型前计算结构化评分，模型文字不能改写这些业务字段。
             int score = risk.score(tools.asset(), tools.vulnerabilities());
             var level = risk.level(score);
             String summary =
@@ -75,6 +79,7 @@ public class AnalysisService {
                             "本系统为演示数据，LAB-* 非真实 CVE。此评分仅用于学习，内容必须人工复核。",
                             tools.trace(),
                             AnalysisStatus.ANALYZED);
+            // 模型异常不会执行到这里，避免把失败流程保存成成功报告。
             reports.save(report);
             return report;
         } finally {
@@ -88,6 +93,12 @@ public class AnalysisService {
 
     public List<AnalysisReport> list() {
         return reports.list(policy.legacyListLimit());
+    }
+
+    public PageResponse<AnalysisSummary> page(
+            long page, long size, String q, RiskLevel riskLevel, AnalysisMode mode) {
+        pages.validate(page, size);
+        return reports.page(page, size, pages.keyword(q), riskLevel, mode);
     }
 
     public PageResponse<AnalysisSummary> page(long page, long size) {

@@ -13,7 +13,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
-/** Maven verify 在全部应用打包后运行真实 core + Agent + MCP，两种模型工具链均使用 fake Ollama。 */
+/**
+ * Maven verify 在全部应用打包后运行真实 core + Agent + MCP，两种模型工具链均使用 fake OpenAI-compatible Chat Completions。
+ */
 class WorkflowSmokeIT {
     @Test
     void packagedServicesUseTypedCoreContractsInBothModes() throws Exception {
@@ -22,9 +24,9 @@ class WorkflowSmokeIT {
         List<Process> children = new ArrayList<>();
         List<Path> logs = new ArrayList<>();
         AtomicInteger requests = new AtomicInteger(), returned = new AtomicInteger();
-        HttpServer ollama = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        ollama.createContext(
-                "/api/chat",
+        HttpServer model = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        model.createContext(
+                "/v1/chat/completions",
                 exchange -> {
                     try {
                         var request = json.readTree(exchange.getRequestBody().readAllBytes());
@@ -42,11 +44,13 @@ class WorkflowSmokeIT {
                             var calls = message.putArray("tool_calls");
                             for (var tool : request.path("tools")) {
                                 String name = tool.path("function").path("name").asText();
-                                var function = calls.addObject().putObject("function");
+                                var call = calls.addObject();
+                                call.put("id", "call_" + calls.size()).put("type", "function");
+                                var function = call.putObject("function");
                                 function.put("name", name);
                                 if (name.endsWith("searchKnowledge"))
-                                    function.putObject("arguments").put("query", "LAB-2026-0001");
-                                else function.putObject("arguments").put("ip", "192.0.2.10");
+                                    function.put("arguments", "{\"query\":\"LAB-2026-0001\"}");
+                                else function.put("arguments", "{\"ip\":\"192.0.2.10\"}");
                             }
                             assertEquals(3, calls.size());
                         } else {
@@ -57,13 +61,17 @@ class WorkflowSmokeIT {
                         }
                         var response =
                                 json.createObjectNode()
-                                        .put("model", "fake")
-                                        .put("created_at", "2026-10-13T00:00:00Z")
-                                        .put("done", true)
-                                        .put("done_reason", "stop")
-                                        .put("prompt_eval_count", 1)
-                                        .put("eval_count", 1);
-                        response.set("message", message);
+                                        .put("id", "fake-" + requests.get())
+                                        .put("object", "chat.completion")
+                                        .put("created", 1)
+                                        .put("model", "fake");
+                        var choice = response.putArray("choices").addObject().put("index", 0);
+                        choice.set("message", message);
+                        choice.put("finish_reason", tools == 0 ? "tool_calls" : "stop");
+                        response.putObject("usage")
+                                .put("prompt_tokens", 1)
+                                .put("completion_tokens", 1)
+                                .put("total_tokens", 2);
                         byte[] bytes = json.writeValueAsBytes(response);
                         exchange.getResponseHeaders().set("Content-Type", "application/json");
                         exchange.sendResponseHeaders(200, bytes.length);
@@ -74,7 +82,7 @@ class WorkflowSmokeIT {
                         exchange.close();
                     }
                 });
-        ollama.start();
+        model.start();
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
         String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
         try {
@@ -120,9 +128,11 @@ class WorkflowSmokeIT {
                                         "--server.port=" + agentPort,
                                         "--lab.core-url=http://127.0.0.1:" + corePort,
                                         "--lab.api-token=smoke-token",
-                                        "--spring.ai.ollama.base-url=http://127.0.0.1:"
-                                                + ollama.getAddress().getPort(),
-                                        "--spring.ai.ollama.chat.options.model=fake"));
+                                        "--spring.ai.openai.base-url=http://127.0.0.1:"
+                                                + model.getAddress().getPort(),
+                                        "--spring.ai.openai.chat.options.model=fake",
+                                        "--spring.ai.openai.api-key=smoke-test-key",
+                                        "--lab.tool-backend=" + backend));
                 if (backend.equals("mcp"))
                     command.addAll(
                             List.of(
@@ -164,7 +174,7 @@ class WorkflowSmokeIT {
             throw ex;
         } finally {
             for (Process process : children.reversed()) stop(process);
-            ollama.stop(0);
+            model.stop(0);
         }
     }
 

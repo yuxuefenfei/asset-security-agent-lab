@@ -21,6 +21,7 @@ public class ToolSchemas {
     }
 
     private ToolDefinition definition(ToolName name, String description, String parameter) {
+        // TODO：parameters 应保留根对象；当前链式结果是 required 数组，缺陷说明见 docs/09-核验记录.md。
         var schema =
                 json.createObjectNode()
                         .put("type", "object")

@@ -31,6 +31,7 @@ public class TicketPO {
     private String note;
     private String remediation;
 
+    // Flex 在 UPDATE 中比较旧版本并递增，Service 必须检查受影响行数。
     @Column(version = true)
     private Long version;
 }

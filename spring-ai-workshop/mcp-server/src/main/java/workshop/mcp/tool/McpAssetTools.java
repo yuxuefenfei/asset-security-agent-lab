@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import workshop.mcp.config.LabProperties;
 
+/** MCP 只读适配：授权后转发核心 REST，不复制数据库，也不提供审批或扫描能力。 */
 @Component
 @RequiredArgsConstructor
 public class McpAssetTools {

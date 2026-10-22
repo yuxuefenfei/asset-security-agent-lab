@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 public class RiskPolicy {
     private final RiskProperties policy;
 
+    /** 教学启发式：最高 CVSS 加资产属性；包含已解决记录，无漏洞也可能有资产加分。 */
     public int score(AssetResponse asset, List<VulnerabilityResponse> vulnerabilities) {
         int highest =
                 vulnerabilities.stream()

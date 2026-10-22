@@ -2,6 +2,7 @@ package lab.controller;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import lab.contract.analysis.RiskLevel;
 import lab.contract.api.*;
 import lab.contract.ticket.*;
 import lab.service.TicketService;
@@ -38,8 +39,12 @@ public class TicketController {
     @GetMapping("/page")
     public ApiResponse<PageResponse<TicketResponse>> page(
             @RequestParam(defaultValue = "1") long page,
-            @RequestParam(defaultValue = "20") long size) {
-        return ApiResponse.ok(service.page(page, size));
+            @RequestParam(defaultValue = "20") long size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) TicketStatus status,
+            @RequestParam(required = false) RiskLevel riskLevel,
+            @RequestParam(required = false) String analysisId) {
+        return ApiResponse.ok(service.page(page, size, q, status, riskLevel, analysisId));
     }
 
     @GetMapping("/{id}")

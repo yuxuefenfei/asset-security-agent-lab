@@ -6,6 +6,7 @@ import java.time.Clock;
 import java.util.*;
 import lab.config.PolicyProperties;
 import lab.config.SecurityProperties;
+import lab.contract.analysis.RiskLevel;
 import lab.contract.api.ApiConstraints;
 import lab.contract.api.PageResponse;
 import lab.contract.ticket.*;
@@ -18,6 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 人工审核流程：同一报告唯一草稿，编辑和审批都必须提交用户已核对的版本。 */
 @Service
 @RequiredArgsConstructor
 public class TicketService {
@@ -30,6 +32,7 @@ public class TicketService {
 
     public TicketResponse draft(String analysisId) {
         var report = analyses.get(analysisId);
+        // 重试直接返回原工单，包括已审批记录，不能以“重新生成”解锁内容。
         var existing = repository.findForAnalysis(analysisId);
         if (existing != null) return response(existing);
         var ticket = new TicketPO();
@@ -56,6 +59,7 @@ public class TicketService {
         try {
             repository.insertDraft(ticket);
         } catch (DataIntegrityViolationException ex) {
+            // 先查后插仍可能竞争；数据库唯一约束决定胜者，失败者读取已提交的同一工单。
             var winner = repository.findForAnalysis(analysisId);
             if (winner == null) throw ex;
             return response(winner);
@@ -100,8 +104,18 @@ public class TicketService {
     }
 
     public PageResponse<TicketResponse> page(long page, long size) {
+        return page(page, size, null, null, null, null);
+    }
+
+    public PageResponse<TicketResponse> page(
+            long page,
+            long size,
+            String q,
+            TicketStatus status,
+            RiskLevel riskLevel,
+            String analysisId) {
         pages.validate(page, size);
-        var result = repository.page(page, size);
+        var result = repository.page(page, size, pages.keyword(q), status, riskLevel, analysisId);
         return new PageResponse<>(
                 result.getRecords().stream().map(this::response).toList(),
                 page,
@@ -120,6 +134,7 @@ public class TicketService {
             throw new LabException(ErrorCode.INVALID_STATE, "该工单已处理，不允许修改或重复审批");
     }
 
+    /** 先比版本再校验状态，让并发旧请求得到 409，提示操作者重新核对最新内容。 */
     private void checkVersion(TicketPO ticket, Long version) {
         if (version == null) throw new IllegalArgumentException("必须提交草稿版本号 version");
         if (!version.equals(ticket.getVersion())) throw conflict();

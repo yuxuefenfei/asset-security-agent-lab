@@ -42,17 +42,13 @@ public class LabRequestFilter extends OncePerRequestFilter {
         response.setHeader("Cache-Control", "no-store");
         response.setHeader("X-Content-Type-Options", "nosniff");
         try {
+            String uri = request.getRequestURI();
+            // 只放行编译产物的明确路径，未知资源仍需口令，不能把 /assets 整段开放。
             boolean publicResource =
                     request.getMethod().equals("GET")
-                            && Set.of(
-                                            "/",
-                                            "/assets/app.css",
-                                            "/assets/app.js",
-                                            "/assets/api.js",
-                                            "/assets/report.js",
-                                            "/assets/ticket.js",
-                                            "/assets/history.js")
-                                    .contains(request.getRequestURI());
+                            && (Set.of("/", "/index.html", "/favicon.svg").contains(uri)
+                                    || uri.matches(
+                                            "/assets/[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*\\.(?:js|css|woff2)"));
             if (!publicResource) {
                 String token = request.getHeader(LabProtocol.TOKEN_HEADER);
                 if (token == null
@@ -64,6 +60,7 @@ public class LabRequestFilter extends OncePerRequestFilter {
                 }
             }
             if (request.getMethod().equals("POST") || request.getMethod().equals("PUT")) {
+                // 多读一个字节即可识别超限，不能先无限读完再判断请求大小。
                 byte[] body = request.getInputStream().readNBytes(policy.maxBodyBytes() + 1);
                 if (body.length > policy.maxBodyBytes()) {
                     fail(response, 400, "请求体过大", "INVALID_REQUEST", trace);
@@ -73,6 +70,7 @@ public class LabRequestFilter extends OncePerRequestFilter {
             }
             chain.doFilter(request, response);
         } finally {
+            // Servlet 线程会复用，必须清理请求上下文，避免下个请求沿用旧编号。
             MDC.remove("traceId");
         }
     }

@@ -2,6 +2,7 @@ package lab.controller;
 
 import lab.contract.api.*;
 import lab.contract.asset.AssetResponse;
+import lab.contract.asset.Criticality;
 import lab.service.AssetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,10 @@ public class AssetController {
     @GetMapping("/page")
     public ApiResponse<PageResponse<AssetResponse>> page(
             @RequestParam(defaultValue = "1") long page,
-            @RequestParam(defaultValue = "20") long size) {
-        return ApiResponse.ok(service.page(page, size));
+            @RequestParam(defaultValue = "20") long size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Criticality criticality,
+            @RequestParam(required = false) Boolean exposed) {
+        return ApiResponse.ok(service.page(page, size, q, criticality, exposed));
     }
 }

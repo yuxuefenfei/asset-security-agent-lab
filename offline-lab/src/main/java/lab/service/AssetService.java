@@ -9,6 +9,7 @@ import lab.config.PolicyProperties;
 import lab.config.SecurityProperties;
 import lab.contract.api.PageResponse;
 import lab.contract.asset.AssetResponse;
+import lab.contract.asset.Criticality;
 import lab.dao.AssetMapper;
 import lab.dao.AssetPortMapper;
 import lab.entity.AssetPO;
@@ -34,6 +35,7 @@ public class AssetService {
                         QueryWrapper.create()
                                 .where(ASSET.IP.eq(ip))
                                 .and(ASSET.TENANT_ID.eq(security.tenantId())));
+        // 先按租户读取；只用无租户计数区分“存在但无权访问”和“资产不存在”。
         if (asset == null) {
             if (assets.selectCountByQuery(QueryWrapper.create().where(ASSET.IP.eq(ip))) > 0)
                 throw new LabException(ErrorCode.FORBIDDEN, "当前租户无权访问该资产");
@@ -55,14 +57,25 @@ public class AssetService {
     }
 
     public PageResponse<AssetResponse> page(long number, long size) {
+        return page(number, size, null, null, null);
+    }
+
+    public PageResponse<AssetResponse> page(
+            long number, long size, String q, Criticality criticality, Boolean exposed) {
         pages.validate(number, size);
-        var result =
-                assets.paginate(
-                        number,
-                        size,
-                        QueryWrapper.create()
-                                .where(ASSET.TENANT_ID.eq(security.tenantId()))
-                                .orderBy(ASSET.ID.asc()));
+        String keyword = pages.keyword(q);
+        var query = QueryWrapper.create().where(ASSET.TENANT_ID.eq(security.tenantId()));
+        if (!keyword.isEmpty())
+            query.and(
+                    ASSET.IP
+                            .like(keyword)
+                            .or(ASSET.HOSTNAME.like(keyword))
+                            .or(ASSET.BUSINESS.like(keyword))
+                            .or(ASSET.OWNER.like(keyword)));
+        if (criticality != null) query.and(ASSET.CRITICALITY.eq(criticality));
+        if (exposed != null) query.and(ASSET.INTERNET_EXPOSED.eq(exposed));
+        // 筛选和分页都在数据库完成，避免加载全表后再按页截取。
+        var result = assets.paginate(number, size, query.orderBy(ASSET.ID.asc()));
         return new PageResponse<>(
                 result.getRecords().stream().map(this::response).toList(),
                 number,

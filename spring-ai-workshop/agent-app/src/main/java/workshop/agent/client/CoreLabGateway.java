@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import workshop.agent.config.LabProperties;
 
+/** 核心 REST 的类型化只读网关；此处固定 IP 白名单与核心租户授权是两层约束。 */
 @Component
 @RequiredArgsConstructor
 public class CoreLabGateway {

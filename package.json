@@ -1,8 +1,31 @@
 {
-  "name": "asset-security-agent-lab-ui-tests",
+  "name": "asset-security-agent-lab",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
-  "scripts": { "test:ui": "node --test ui-tests/*.test.mjs" },
-  "devDependencies": { "playwright": "1.62.1" }
+  "engines": {
+    "node": "^22.18.0 || >=24.12.0"
+  },
+  "scripts": {
+    "test:ui": "node --test ui-tests/*.test.mjs",
+    "contracts:check": "node scripts/generate-contracts.mjs --check",
+    "typecheck": "vue-tsc --noEmit -p frontend/tsconfig.json",
+    "contracts:generate": "node scripts/generate-contracts.mjs",
+    "build": "pnpm contracts:check && pnpm typecheck && vite build --config frontend/vite.config.ts",
+    "preview": "vite preview --config frontend/vite.config.ts --host 127.0.0.1",
+    "dev": "vite --config frontend/vite.config.ts",
+    "format:check": "prettier --check \"frontend/src/**/*.{ts,vue,css}\" frontend/vite.config.ts scripts/*frontend.mjs scripts/generate-contracts.mjs ui-tests/workflow.test.mjs tokens.css"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.10",
+    "playwright": "1.62.1",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3",
+    "vite": "8.3.5",
+    "vue-tsc": "3.3.13"
+  },
+  "dependencies": {
+    "vue": "3.5.44",
+    "vue-router": "5.4.0"
+  },
+  "packageManager": "pnpm@10.32.1"
 }

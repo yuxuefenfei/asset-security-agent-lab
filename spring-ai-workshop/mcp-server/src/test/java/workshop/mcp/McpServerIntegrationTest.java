@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,8 +26,7 @@ import org.springframework.test.context.DynamicPropertySource;
 class McpServerIntegrationTest {
     private static final AtomicInteger coreCalls = new AtomicInteger();
     private static final HttpServer core = startCore();
-    @LocalServerPort
-    private int port;
+    @LocalServerPort private int port;
 
     private static HttpServer startCore() {
         try {

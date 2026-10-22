@@ -54,6 +54,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiResponse<Void>> unexpected(Exception ex) {
+        // 详细堆栈只留服务端日志，客户端通过 traceId 定位，不返回 SQL 或上游原文。
         log.error("执行失败 traceId={}", MDC.get("traceId"), ex);
         return failure(ErrorCode.INTERNAL_ERROR, "执行失败，请使用 traceId 查询服务日志");
     }

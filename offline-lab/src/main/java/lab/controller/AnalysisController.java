@@ -27,8 +27,11 @@ public class AnalysisController {
     @GetMapping("/analyses/page")
     public ApiResponse<PageResponse<AnalysisSummary>> page(
             @RequestParam(defaultValue = "1") long page,
-            @RequestParam(defaultValue = "20") long size) {
-        return ApiResponse.ok(service.page(page, size));
+            @RequestParam(defaultValue = "20") long size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) RiskLevel riskLevel,
+            @RequestParam(required = false) AnalysisMode mode) {
+        return ApiResponse.ok(service.page(page, size, q, riskLevel, mode));
     }
 
     @GetMapping("/analyses/{id}")
