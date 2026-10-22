@@ -333,6 +333,50 @@ test('token change clears protected views, handles errors and restores connectio
     await page.close()
   }
 })
+test('ticket status shortcuts preserve filters and open the current review version', async () => {
+  const page = await pageForTest('/tickets')
+  try {
+    const reportResponse = await page.request.post(base + '/api/analyze', {
+      headers: { 'X-Lab-Token': token },
+      data: { ip: '192.0.2.30', mode: 'demo', question: '工单状态切换回归' },
+    })
+    assert.equal(reportResponse.status(), 200)
+    const report = (await reportResponse.json()).data
+    const draftResponse = await page.request.post(base + '/api/tickets/draft', {
+      headers: { 'X-Lab-Token': token },
+      data: { analysisId: report.id },
+    })
+    assert.equal(draftResponse.status(), 200)
+    const draft = (await draftResponse.json()).data
+    await page.fill('#ticketSearch', draft.id)
+    await page.selectOption('#ticketRisk', 'HIGH')
+    await page.getByRole('button', { name: '待审批', exact: true }).click()
+    await page.waitForURL((url) => url.hash.includes('status=DRAFT'))
+    await page.getByRole('link', { name: '审核草稿', exact: true }).waitFor()
+    assert.equal(await page.locator('tbody tr').count(), 1)
+    assert.equal(await page.locator('.pagination-controls').count(), 0)
+    await page.getByRole('button', { name: '已审批', exact: true }).click()
+    await page.getByRole('heading', { name: '当前没有符合条件的工单', exact: true }).waitFor()
+    await page.goBack()
+    await page.getByRole('link', { name: '审核草稿', exact: true }).waitFor()
+    assert.equal(await page.inputValue('#ticketSearch'), draft.id)
+    assert.equal(await page.inputValue('#ticketRisk'), 'HIGH')
+    for (const width of [768, 414, 375, 320]) {
+      await page.setViewportSize({ width, height: 900 })
+      assert.ok(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+        'ticket page overflows at ' + width,
+      )
+    }
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    await page.getByRole('link', { name: '审核草稿', exact: true }).click()
+    await page.locator('#ticketTitle').waitFor()
+    assert.equal(await page.inputValue('#ticketTitle'), draft.title)
+    assert.equal(await page.isDisabled('#saveTicket'), true)
+  } finally {
+    await page.close()
+  }
+})
 test('desktop and mobile workbench render without page overflow or script errors', async () => {
   const page = await pageForTest('/')
   const errors = []
@@ -341,7 +385,7 @@ test('desktop and mobile workbench render without page overflow or script errors
     await page.locator('.metrics').waitFor()
     await page.evaluate(() => window.scrollTo(0, 0))
     await page.screenshot({ path: path.join(root, 'offline-lab/target/ui-workbench.png'), fullPage: true })
-    for (const width of [1920, 1440, 960, 768, 375, 320]) {
+    for (const width of [1920, 1440, 960, 768, 414, 375, 320]) {
       await page.setViewportSize({ width, height: 900 })
       assert.ok(
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),

@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-22",
+  "framework": "Vue / TypeScript",
+  "designSystem": "design.md",
+  "tokens": "tokens.css",
+  "fonts": "Bahnschrift / Segoe UI / Microsoft Yahei / Cascadia Code",
+  "motion": "none",
+  "spacing": "4px scale",
+  "scope": "shared shell and ticket list",
+  "tone": "restrained"
+}

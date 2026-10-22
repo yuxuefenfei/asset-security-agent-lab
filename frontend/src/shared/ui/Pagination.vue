@@ -5,7 +5,7 @@ defineEmits<{ change: [page: number, size?: number] }>()
 const pages = computed(() => Math.max(1, Math.ceil(props.total / props.size)))
 </script>
 <template>
-  <div class="pagination">
+  <div v-if="total > 10 || page > 1" class="pagination">
     <span>共 {{ total }} 条记录</span>
     <div class="pagination-controls">
       <label class="sr-only" for="pageSize">每页条数</label

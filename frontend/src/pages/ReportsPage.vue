@@ -14,7 +14,7 @@ const { data, pending, error, reload, filters, apply, reset, page, size, turn } 
 )
 </script>
 <template>
-  <PageHeader title="分析报告" description="每份报告保存分析时的资产、漏洞、知识证据和工具调用快照。"
+  <PageHeader title="分析报告" :count="data?.total"
     ><RouterLink class="button" to="/analysis/new"><Icon name="plus" />新建安全分析</RouterLink></PageHeader
   >
   <section class="panel">

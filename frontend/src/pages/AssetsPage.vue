@@ -13,7 +13,7 @@ const { data, pending, error, reload, filters, apply, reset, page, size, turn } 
 )
 </script>
 <template>
-  <PageHeader title="资产中心" description="了解授权资产的业务背景、暴露面与模拟漏洞，再选择分析对象。"
+  <PageHeader title="资产中心" :count="data?.total"
     ><RouterLink class="button" to="/analysis/new"><Icon name="plus" />新建安全分析</RouterLink></PageHeader
   >
   <section class="panel">

@@ -17,20 +17,9 @@ const { data, pending, error, reload } = useResource(async (signal) => {
   ])
   return { stats, reports, tickets }
 })
-const steps = [
-  { title: '确认分析对象', hint: '查看授权资产、业务与暴露端口', to: '/assets', action: '浏览资产' },
-  { title: '执行安全分析', hint: '选择规则或模型，提出分析目标', to: '/analysis/new', action: '新建分析' },
-  { title: '核查报告证据', hint: '对照漏洞、引文与工具调用', to: '/reports', action: '查看报告' },
-  {
-    title: '审核整改工单',
-    hint: '编辑建议，确认版本后人工审批',
-    to: '/tickets?status=DRAFT',
-    action: '处理待办',
-  },
-]
 </script>
 <template>
-  <PageHeader title="安全运营工作台" description="从资产风险到证据核查，在一个清晰的流程中完成教学演练。"
+  <PageHeader title="工作台"
     ><button class="button secondary" :disabled="pending" @click="reload"><Icon name="refresh" />刷新</button
     ><RouterLink class="button" to="/analysis/new"><Icon name="plus" />新建安全分析</RouterLink></PageHeader
   >
@@ -38,51 +27,25 @@ const steps = [
     ><template v-if="data">
       <div class="metrics">
         <RouterLink to="/assets" class="panel metric"
-          ><div class="metric-heading">
-            授权资产<span class="metric-icon"><Icon name="server" /></span>
-          </div>
+          ><div class="metric-heading">授权资产</div>
           <div class="metric-value">{{ data.stats.assetCount }}</div>
           <div class="metric-note">{{ data.stats.exposedAssetCount }} 项存在公网暴露</div></RouterLink
         >
         <RouterLink to="/reports" class="panel metric"
-          ><div class="metric-heading">
-            分析报告<span class="metric-icon"><Icon name="file" /></span>
-          </div>
+          ><div class="metric-heading">分析报告</div>
           <div class="metric-value">{{ data.stats.reportCount }}</div>
-          <div class="metric-note">已完成并保存的分析快照</div></RouterLink
-        >
+        </RouterLink>
         <RouterLink to="/reports?riskLevel=HIGH" class="panel metric"
-          ><div class="metric-heading">
-            高风险报告<span class="metric-icon"><Icon name="alert" /></span>
-          </div>
+          ><div class="metric-heading">高风险报告</div>
           <div class="metric-value">{{ data.stats.highRiskReportCount }}</div>
-          <div class="metric-note">按报告计数，采用教学评分规则</div></RouterLink
-        >
+        </RouterLink>
         <RouterLink to="/tickets?status=DRAFT" class="panel metric"
-          ><div class="metric-heading">
-            待审批工单<span class="metric-icon"><Icon name="ticket" /></span>
-          </div>
+          ><div class="metric-heading">待审批工单</div>
           <div class="metric-value">{{ data.stats.pendingTicketCount }}</div>
           <div class="metric-note">{{ data.stats.approvedTicketCount }} 份工单已完成模拟审批</div></RouterLink
         >
       </div>
       <div class="stack">
-        <section class="panel">
-          <div class="panel-header">
-            <h2>分析到审批，一条完整的证据链</h2>
-            <span class="muted">本地实验流程</span>
-          </div>
-          <div class="workflow">
-            <div class="workflow-step" v-for="(step, i) in steps" :key="step.title">
-              <span class="workflow-number">{{ i + 1 }}</span>
-              <h3>{{ step.title }}</h3>
-              <p>{{ step.hint }}</p>
-              <RouterLink class="text-link" :to="step.to"
-                >{{ step.action }}<Icon name="arrow" :size="14"
-              /></RouterLink>
-            </div>
-          </div>
-        </section>
         <div class="content-aside">
           <section class="panel">
             <div class="panel-header">
@@ -135,7 +98,11 @@ const steps = [
           <section class="panel">
             <div class="panel-header">
               <h2>待办工单</h2>
-              <Badge value="DRAFT" :text="data.stats.pendingTicketCount + ' 份待审批'" />
+              <Badge
+                v-if="data.stats.pendingTicketCount > 0"
+                value="DRAFT"
+                :text="data.stats.pendingTicketCount + ' 份待审批'"
+              />
             </div>
             <AsyncState
               :pending="false"
@@ -159,13 +126,6 @@ const steps = [
               </ul></AsyncState
             >
           </section>
-        </div>
-        <div class="notice">
-          <Icon name="book" />
-          <p>
-            这是一个教学工作空间，使用虚构资产与漏洞数据。规则评分、知识关键词检索和本地审批用于理解 Agent
-            机制。知识库现有 {{ data.stats.knowledgeCount }} 份资料，可在报告中核对引用来源。
-          </p>
         </div>
       </div>
     </template></AsyncState

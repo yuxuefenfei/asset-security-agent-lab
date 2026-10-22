@@ -148,7 +148,7 @@ local 是 `ChatClient → @Tool → 核心 REST`；MCP 是 `ChatClient → ToolC
 
 ## 验证与文档导航
 
-2026-10-22：根工程 `mvn verify` 包括前端构建、Spotless、28 项 Java 测试；另有 9 项浏览器回归。具体运行结果、环境和未覆盖项以[核验记录](docs/09-核验记录.md)为准。
+2026-10-22：根工程 `mvn verify` 包括前端构建、Spotless、28 项 Java 测试；另有 10 项浏览器回归。具体运行结果、环境和未覆盖项以[核验记录](docs/09-核验记录.md)为准。
 
 浏览器测试使用已打包 JAR、隔离内存库及随机本机端口：
 

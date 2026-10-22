@@ -1,5 +1,5 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app
- * pre-emit critique: P4 H4 E4 S4 R5 V4 */
+ * pre-emit critique: P4 H5 E4 S4 R5 V4 */
 @import '../../../tokens.css';
 html,
 body {
@@ -1296,5 +1296,401 @@ summary {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* 紧凑工作台：单行导航、明确的主操作，优先展示业务记录；复用既有页面状态样式。 */
+.compact-workbench .sidebar {
+  width: var(--shell-sidebar-width);
+  padding: var(--space-md) var(--space-xs) var(--space-sm);
+  border-right: var(--rule-width) solid var(--color-rule);
+}
+.compact-workbench .brand {
+  gap: var(--space-2xs);
+  padding: 0 var(--space-xs);
+  margin-bottom: var(--space-lg);
+  font-size: var(--text-xl);
+  color: var(--color-ink);
+  letter-spacing: 0;
+}
+.compact-workbench .brand-mark {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.compact-workbench .nav-link {
+  min-height: 44px;
+  gap: var(--space-xs);
+  border-left: 0;
+  font-size: var(--text-md);
+  padding: var(--space-2xs) var(--space-xs);
+}
+.compact-workbench .nav-link.is-active {
+  background: var(--color-sidebar-active);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.compact-workbench .sidebar-bottom {
+  padding-top: var(--space-md);
+}
+.compact-workbench .settings-link {
+  margin-top: 0;
+}
+.compact-workbench .app-main {
+  margin-left: var(--shell-sidebar-width);
+}
+.compact-workbench .topbar {
+  height: var(--shell-topbar-height);
+  padding: 0 var(--space-md);
+}
+.shell-label,
+.environment-label {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.environment-label {
+  padding: var(--space-3xs) var(--space-2xs);
+  border-radius: var(--radius-input);
+  background: var(--color-paper-2);
+  color: var(--color-ink-2);
+}
+.compact-workbench #main-content {
+  max-width: 1680px;
+  min-height: calc(100vh - var(--shell-topbar-height));
+  padding: var(--space-md);
+}
+.compact-workbench .page-heading {
+  margin: 0 0 var(--space-md);
+  min-height: 40px;
+}
+.page-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.page-count {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  padding-left: var(--space-xs);
+  border-left: var(--rule-width) solid var(--color-rule);
+}
+.compact-workbench h1 {
+  font-family: var(--font-body);
+  font-size: var(--text-display);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.compact-workbench .button {
+  min-height: 38px;
+  white-space: nowrap;
+  padding: var(--space-2xs) var(--space-xs);
+}
+.compact-workbench .button.quiet {
+  background: var(--color-surface);
+  border-color: transparent;
+  color: var(--color-muted);
+}
+.compact-workbench .icon-button {
+  min-width: 38px;
+  min-height: 38px;
+}
+.compact-workbench .text-link {
+  text-decoration: none;
+}
+.compact-workbench .filter-bar {
+  gap: var(--space-2xs);
+  padding: var(--space-sm);
+}
+.compact-workbench .filter-bar .field > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.compact-workbench .filter-bar .field {
+  max-width: 360px;
+}
+.compact-workbench .filter-bar .filter-select {
+  flex: 0 1 144px;
+}
+.compact-workbench .filter-bar input,
+.compact-workbench .filter-bar select {
+  min-height: 38px;
+  color-scheme: light;
+  background-color: var(--color-surface);
+  font-size: var(--text-sm);
+}
+.compact-workbench select option {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.compact-workbench .filter-bar .button {
+  background: var(--color-surface);
+  color: var(--color-ink-2);
+  border-color: var(--color-rule);
+}
+.compact-workbench th {
+  font-weight: 500;
+  background: var(--color-paper);
+  padding: var(--space-xs) var(--space-sm);
+}
+.compact-workbench td {
+  padding: var(--space-2xs) var(--space-sm);
+}
+.compact-workbench td .text-link {
+  min-height: 24px;
+}
+.compact-workbench .cell-sub {
+  font-size: var(--text-xs);
+  margin-top: 2px;
+}
+.compact-workbench .badge {
+  font-size: var(--text-xs);
+  padding: 2px var(--space-2xs);
+  line-height: 1.6;
+}
+.compact-workbench .pagination {
+  min-height: 60px;
+  padding: var(--space-xs) var(--space-sm);
+}
+.compact-workbench .pagination select {
+  min-height: 38px;
+}
+.ticket-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+}
+.status-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  flex-shrink: 0;
+}
+.status-switch button {
+  min-height: 38px;
+  white-space: nowrap;
+  padding: var(--space-2xs) var(--space-xs);
+  border: 0;
+  border-radius: var(--radius-input);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+.status-switch button[aria-pressed='true'] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.compact-workbench .ticket-filters {
+  flex: 1;
+  justify-content: flex-end;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+}
+.compact-workbench .ticket-filters .search-field {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+  max-width: 300px;
+}
+.search-field > svg {
+  position: absolute;
+  top: 50%;
+  left: var(--space-xs);
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--color-muted);
+}
+.compact-workbench .search-field input {
+  padding-left: var(--space-lg);
+}
+.compact-workbench .ticket-filters .filter-select {
+  flex: 0 0 112px;
+  min-width: 112px;
+}
+.refresh-list {
+  flex-shrink: 0;
+}
+.tickets-table {
+  min-width: 820px;
+}
+.tickets-table th:first-child {
+  width: 38%;
+}
+.ticket-title {
+  display: block;
+  max-width: 34rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-ink);
+  font-weight: 500;
+  line-height: 1.6;
+}
+.asset-reference {
+  white-space: nowrap;
+  color: var(--color-ink-2);
+}
+.table-time {
+  color: var(--color-muted);
+  white-space: nowrap;
+  font-size: var(--text-xs);
+}
+.row-action {
+  text-align: right;
+  white-space: nowrap;
+}
+.row-action .text-link {
+  font-size: var(--text-xs);
+}
+.compact-workbench .metrics {
+  gap: 0;
+  border: var(--rule-width) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+.compact-workbench .metric {
+  padding: var(--space-sm) var(--space-md);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.compact-workbench .metric + .metric {
+  border-left: var(--rule-width) solid var(--color-rule);
+}
+.compact-workbench .metric-value {
+  font-size: var(--text-display);
+  margin-top: var(--space-xs);
+}
+.compact-workbench .metric-heading {
+  font-size: var(--text-sm);
+}
+.compact-workbench .metric-note {
+  font-size: var(--text-xs);
+}
+.compact-workbench .knowledge-card {
+  padding: var(--space-sm);
+}
+.compact-workbench .knowledge-card h2 {
+  font-size: var(--text-md);
+}
+.compact-workbench .knowledge-card p {
+  -webkit-line-clamp: 2;
+}
+@media (hover: hover) {
+  .compact-workbench .nav-link:hover {
+    background: var(--color-paper-2);
+    color: var(--color-ink);
+  }
+  .compact-workbench .nav-link.is-active:hover,
+  .status-switch button:hover {
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+  }
+  .compact-workbench .text-link:hover,
+  .ticket-title:hover,
+  .asset-reference:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+@media (max-width: 1240px) {
+  .ticket-toolbar {
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+  .compact-workbench .ticket-filters {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+  .refresh-list {
+    margin-left: auto;
+  }
+  .compact-workbench .ticket-filters .search-field {
+    max-width: none;
+  }
+}
+@media (max-width: 960px) {
+  .compact-workbench .sidebar {
+    width: var(--shell-sidebar-width);
+  }
+  .compact-workbench .app-main {
+    margin-left: 0;
+  }
+}
+@media (max-width: 600px) {
+  .compact-workbench #main-content {
+    padding: var(--space-sm);
+  }
+  .compact-workbench .topbar {
+    padding: 0 var(--space-sm);
+  }
+  .compact-workbench .topbar-left {
+    gap: var(--space-2xs);
+  }
+  .compact-workbench .page-heading {
+    gap: var(--space-xs);
+  }
+  .compact-workbench .heading-actions {
+    max-width: 100%;
+  }
+  .compact-workbench .button,
+  .compact-workbench .icon-button,
+  .compact-workbench .filter-bar input,
+  .compact-workbench .filter-bar select,
+  .status-switch button {
+    min-height: 44px;
+  }
+  .compact-workbench .icon-button {
+    min-width: 44px;
+  }
+  .compact-workbench .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .compact-workbench .filter-bar .field {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: none;
+  }
+  .compact-workbench .filter-bar .filter-select {
+    flex: 1 1 110px;
+    min-width: 110px;
+  }
+  .compact-workbench .ticket-filters {
+    padding: 0;
+  }
+  .compact-workbench .ticket-filters .search-field {
+    flex-basis: 100%;
+  }
+  .ticket-toolbar {
+    padding: var(--space-xs);
+  }
+  .status-switch button {
+    padding-inline: var(--space-2xs);
+  }
+  .compact-workbench .metric {
+    padding: var(--space-sm);
+  }
+  .compact-workbench .metric:nth-child(3) {
+    border-left: 0;
+  }
+  .compact-workbench .metric:nth-child(n + 3) {
+    border-top: var(--rule-width) solid var(--color-rule);
   }
 }
