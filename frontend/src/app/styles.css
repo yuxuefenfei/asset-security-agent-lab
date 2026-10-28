@@ -1111,7 +1111,7 @@ summary {
   input:hover:not(:disabled),
   textarea:hover:not(:disabled),
   select:hover:not(:disabled) {
-    background: var(--color-paper-2);
+    background-color: var(--color-paper-2);
     color: var(--color-ink);
   }
 }
@@ -1386,9 +1386,80 @@ summary {
   line-height: 1.3;
 }
 .compact-workbench .button {
-  min-height: 38px;
+  min-height: var(--control-height);
   white-space: nowrap;
   padding: var(--space-2xs) var(--space-xs);
+}
+/* 共享控件尺寸，避免表单输入框与紧凑按钮使用不同高度；单选框保留自身尺寸。 */
+.compact-workbench input:not([type='radio']):not([type='checkbox']),
+.compact-workbench select {
+  min-width: 0;
+  min-height: var(--control-height);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+/* 保留原生选择行为，只统一闭合状态的箭头和右侧留白。 */
+.compact-workbench select:not([multiple]) {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2354687a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+}
+/* 用分组容器管理纵向节奏，避免插入翻页操作后相邻字段的间距规则失效。 */
+.form-fields {
+  display: grid;
+  gap: var(--space-md);
+}
+.form-fields > .field + .field {
+  margin-top: 0;
+}
+.asset-picker {
+  display: grid;
+  gap: var(--space-xs);
+}
+.asset-picker-pagination {
+  row-gap: var(--space-2xs);
+}
+.help-card-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+.help-card-heading h2 {
+  font-size: var(--text-lg);
+}
+.help-card-heading + .help-list {
+  margin-top: 0;
+}
+.approval-form,
+.tool-catalog {
+  display: grid;
+  gap: var(--space-sm);
+}
+.tool-catalog {
+  gap: var(--space-md);
+}
+.asset-picker-search {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+.asset-picker-search .field {
+  flex: 1;
+  min-width: 0;
+}
+.asset-picker-search .button {
+  flex-shrink: 0;
+}
+@media (forced-colors: active) {
+  .compact-workbench select:not([multiple]) {
+    appearance: auto;
+    background-image: none;
+  }
 }
 .compact-workbench .button.quiet {
   background: var(--color-surface);
@@ -1396,8 +1467,8 @@ summary {
   color: var(--color-muted);
 }
 .compact-workbench .icon-button {
-  min-width: 38px;
-  min-height: 38px;
+  min-width: var(--control-height);
+  min-height: var(--control-height);
 }
 .compact-workbench .text-link {
   text-decoration: none;
@@ -1425,7 +1496,7 @@ summary {
 }
 .compact-workbench .filter-bar input,
 .compact-workbench .filter-bar select {
-  min-height: 38px;
+  min-height: var(--control-height);
   color-scheme: light;
   background-color: var(--color-surface);
   font-size: var(--text-sm);
@@ -1464,7 +1535,7 @@ summary {
   padding: var(--space-xs) var(--space-sm);
 }
 .compact-workbench .pagination select {
-  min-height: 38px;
+  min-height: var(--control-height);
 }
 .ticket-toolbar {
   display: flex;
@@ -1479,7 +1550,7 @@ summary {
   flex-shrink: 0;
 }
 .status-switch button {
-  min-height: 38px;
+  min-height: var(--control-height);
   white-space: nowrap;
   padding: var(--space-2xs) var(--space-xs);
   border: 0;
@@ -1649,12 +1720,8 @@ summary {
   .compact-workbench .heading-actions {
     max-width: 100%;
   }
-  .compact-workbench .button,
-  .compact-workbench .icon-button,
-  .compact-workbench .filter-bar input,
-  .compact-workbench .filter-bar select,
-  .status-switch button {
-    min-height: 44px;
+  .compact-workbench {
+    --control-height: 2.75rem;
   }
   .compact-workbench .icon-button {
     min-width: 44px;

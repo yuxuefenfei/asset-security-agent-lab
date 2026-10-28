@@ -8,11 +8,13 @@ import lab.contract.tool.ToolName;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/** 向模型声明三个只读工具的名称、用途和参数；声明不执行工具，实际授权在 ToolSession 完成。 */
 @Component
 @RequiredArgsConstructor
 public class ToolSchemas {
     private final ObjectMapper json;
 
+    /** 列出模型可申请的只读工具；不提供工单修改、审批或真实扫描能力。 */
     public List<ToolDefinition> definitions() {
         return List.of(
                 definition(ToolName.GET_ASSET, "查询目标资产基本信息、归属和网络暴露情况", "ip"),

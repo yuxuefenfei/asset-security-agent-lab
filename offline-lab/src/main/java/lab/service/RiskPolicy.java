@@ -8,6 +8,7 @@ import lab.contract.vulnerability.VulnerabilityResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/** 可单独测试的教学风险规则；不调用模型或数据库，只根据输入快照计算分数与等级。 */
 @Component
 @RequiredArgsConstructor
 public class RiskPolicy {
@@ -29,6 +30,7 @@ public class RiskPolicy {
                                 : 0));
     }
 
+    /** 先判断高风险阈值，再判断中风险阈值；阈值顺序在配置启动校验中保证。 */
     public RiskLevel level(int score) {
         return score >= policy.highThreshold()
                 ? RiskLevel.HIGH

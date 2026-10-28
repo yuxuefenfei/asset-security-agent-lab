@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/** 让 Agent 入口复用核心的严格 JSON 标量类型约束，避免两个服务接受不同格式的请求值。 */
 @Configuration
 public class JsonConfiguration {
     @Bean

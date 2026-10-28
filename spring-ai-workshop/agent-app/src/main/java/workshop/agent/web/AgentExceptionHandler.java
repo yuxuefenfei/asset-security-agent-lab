@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClientException;
 
+/** 独立 Agent 的异常出口；保留其 ErrorResponse 契约，上游故障详情留在服务端。 */
 @Slf4j
 @RestControllerAdvice
 public class AgentExceptionHandler {

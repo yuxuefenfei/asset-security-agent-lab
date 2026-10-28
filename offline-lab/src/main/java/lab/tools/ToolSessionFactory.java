@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 每次分析创建一个独立工具会话；在短事务内读取授权资产和漏洞，随后释放数据库事务。 */
 @Component
 @RequiredArgsConstructor
 public class ToolSessionFactory {

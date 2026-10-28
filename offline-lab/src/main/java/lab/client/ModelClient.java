@@ -32,6 +32,7 @@ public class ModelClient {
     private final HttpClient client;
     private final SystemPrompt prompt;
 
+    /** 执行有轮数、工具次数、总时限及响应容量限制的模型循环；仅返回解释文字，不改变规则分数。 */
     public String reason(String ip, String question, ToolSession tools) {
         try {
             List<ChatMessage> messages = new ArrayList<>();

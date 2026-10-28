@@ -19,7 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 人工审核流程：同一报告唯一草稿，编辑和审批都必须提交用户已核对的版本。 */
+/** 人工审核流程的业务入口：一份报告对应唯一工单，只有草稿能编辑或审批。 编辑和审批都使用操作者已核对的版本；数据库乐观锁负责拦截校验后的并发写入。 */
 @Service
 @RequiredArgsConstructor
 public class TicketService {
@@ -30,6 +30,7 @@ public class TicketService {
     private final PagePolicy pages;
     private final Clock clock;
 
+    /** 从报告生成待人工审核的方案；重复或并发创建返回同一工单，已审批内容不会重新解锁。 */
     public TicketResponse draft(String analysisId) {
         var report = analyses.get(analysisId);
         // 重试直接返回原工单，包括已审批记录，不能以“重新生成”解锁内容。
@@ -67,6 +68,7 @@ public class TicketService {
         return response(ticket);
     }
 
+    /** 完整替换草稿内容；先核对版本和可编辑状态，再用带旧版本条件的更新避免并发覆盖。 */
     @Transactional
     public TicketResponse edit(String id, EditTicketRequest request) {
         var ticket = required(id);
@@ -79,6 +81,7 @@ public class TicketService {
         return get(id);
     }
 
+    /** 校验本地审批码及已核对版本，在同一事务中写入审批人、审批时刻并锁定工单内容。 */
     @Transactional
     public TicketResponse approve(ApproveRequest request) {
         if (!MessageDigest.isEqual(
@@ -95,10 +98,12 @@ public class TicketService {
         return get(ticket.getId());
     }
 
+    /** 读取当前租户的工单，并转换为前端可用的内容和版本。 */
     public TicketResponse get(String id) {
         return response(required(id));
     }
 
+    /** 为旧调用方保留有限列表，页面应使用带筛选的分页方法。 */
     public List<TicketResponse> list() {
         return repository.list(policy.legacyListLimit()).stream().map(this::response).toList();
     }
@@ -107,6 +112,7 @@ public class TicketService {
         return page(page, size, null, null, null, null);
     }
 
+    /** 分页搜索当前租户工单；版本校验属于写入流程，列表只展示当前内容。 */
     public PageResponse<TicketResponse> page(
             long page,
             long size,
@@ -123,12 +129,14 @@ public class TicketService {
                 result.getTotalRow());
     }
 
+    /** 只在当前租户中查找工单；找不到时拒绝后续编辑或审批。 */
     private TicketPO required(String id) {
         var ticket = repository.find(id);
         if (ticket == null) throw new IllegalArgumentException("工单不存在");
         return ticket;
     }
 
+    /** 业务状态守卫：已审批内容不可修改，也不能再次审批。 */
     private void requireDraft(TicketPO ticket) {
         if (ticket.getStatus() != TicketStatus.DRAFT)
             throw new LabException(ErrorCode.INVALID_STATE, "该工单已处理，不允许修改或重复审批");
@@ -144,6 +152,7 @@ public class TicketService {
         return new LabException(ErrorCode.VERSION_CONFLICT, "草稿已更新，请重新加载后审核");
     }
 
+    /** 将持久化实体转为接口视图；未审批时间保持 null，时间统一输出为 ISO-8601 字符串。 */
     private TicketResponse response(TicketPO t) {
         return new TicketResponse(
                 t.getId(),

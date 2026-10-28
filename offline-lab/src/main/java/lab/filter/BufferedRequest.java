@@ -5,6 +5,7 @@ import jakarta.servlet.http.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
+/** 请求体缓存包装器：过滤器读取并检查容量后，用新输入流把同一份字节交给 MVC 解析。 */
 final class BufferedRequest extends HttpServletRequestWrapper {
 
     private final byte[] body;

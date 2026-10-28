@@ -7,6 +7,7 @@ import lab.tools.ToolSchemas;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+/** 工具声明查询接口，方便学习者查看模型可申请的能力；此接口本身不执行工具。 */
 @RestController
 @RequiredArgsConstructor
 public class ToolController {

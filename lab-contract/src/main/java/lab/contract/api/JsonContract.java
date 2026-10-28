@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.type.LogicalType;
 public final class JsonContract {
     private JsonContract() {}
 
+    /** 关闭有歧义的标量转换，例如字符串版本号或小数转整数，避免请求含义在解析时变化。 */
     public static void configure(ObjectMapper mapper) {
         mapper.coercionConfigFor(LogicalType.Integer)
                 .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)

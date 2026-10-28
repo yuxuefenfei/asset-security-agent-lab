@@ -9,6 +9,7 @@ import lab.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+/** 工单 HTTP 适配层；草稿创建、编辑和人工审批都交由服务执行状态与版本校验。 */
 @RestController
 @RequestMapping("/api/tickets")
 @RequiredArgsConstructor

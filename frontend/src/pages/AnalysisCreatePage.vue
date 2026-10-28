@@ -56,8 +56,8 @@ function resetAssets() {
         <span class="muted">完成后自动保存报告</span>
       </div>
       <div class="panel-body">
-        <form @submit.prevent="findAssets" class="actions">
-          <div class="field" style="flex: 1">
+        <form @submit.prevent="findAssets" class="asset-picker-search">
+          <div class="field">
             <label for="assetPickerSearch">查找授权资产</label
             ><input
               id="assetPickerSearch"
@@ -80,32 +80,34 @@ function resetAssets() {
             ><button class="button secondary" @click="resetAssets">显示授权资产</button></template
           >
           <form @submit.prevent="run" id="analysisForm">
-            <fieldset :disabled="busy">
-              <div class="field">
-                <label for="ip">分析对象</label
-                ><select id="ip" v-model="ip" required>
-                  <option v-for="asset in data?.items" :value="asset.ip" :key="asset.id">
-                    {{ asset.ip }} · {{ asset.hostname }} · {{ asset.business }}
-                  </option></select
-                ><span class="helper">只显示当前租户授权的资产。</span>
-              </div>
-              <div v-if="data && data.total > 20" class="actions">
-                <button
-                  class="button secondary"
-                  type="button"
-                  :disabled="assetPage === 1"
-                  @click="assetPage--"
-                >
-                  上一组资产</button
-                ><span class="muted">第 {{ assetPage }} 组</span
-                ><button
-                  class="button secondary"
-                  type="button"
-                  :disabled="assetPage * 20 >= data.total"
-                  @click="assetPage++"
-                >
-                  下一组资产
-                </button>
+            <fieldset class="form-fields" :disabled="busy">
+              <div class="asset-picker">
+                <div class="field">
+                  <label for="ip">分析对象</label
+                  ><select id="ip" v-model="ip" required>
+                    <option v-for="asset in data?.items" :value="asset.ip" :key="asset.id">
+                      {{ asset.ip }} · {{ asset.hostname }} · {{ asset.business }}
+                    </option></select
+                  ><span class="helper">只显示当前租户授权的资产。</span>
+                </div>
+                <div v-if="data && data.total > 20" class="actions asset-picker-pagination">
+                  <button
+                    class="button secondary"
+                    type="button"
+                    :disabled="assetPage === 1"
+                    @click="assetPage--"
+                  >
+                    上一组资产</button
+                  ><span class="muted">第 {{ assetPage }} 组</span
+                  ><button
+                    class="button secondary"
+                    type="button"
+                    :disabled="assetPage * 20 >= data.total"
+                    @click="assetPage++"
+                  >
+                    下一组资产
+                  </button>
+                </div>
               </div>
               <div class="field">
                 <span class="field-label" id="modeLabel">执行模式</span>
@@ -155,8 +157,10 @@ function resetAssets() {
     </section>
     <aside class="stack">
       <section class="panel panel-body help-card">
-        <Icon name="shield" :size="28" />
-        <h2>先理解，再判断</h2>
+        <div class="help-card-heading">
+          <Icon name="shield" :size="28" />
+          <h2>先理解，再判断</h2>
+        </div>
         <ol class="help-list">
           <li>工具在当前资产和租户范围内读取数据。</li>
           <li>知识检索提供可核对的正文和来源。</li>

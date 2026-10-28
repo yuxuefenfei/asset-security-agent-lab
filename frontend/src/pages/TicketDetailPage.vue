@@ -148,7 +148,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
               <span class="muted">{{ dirty ? '存在未保存修改' : '已与当前版本同步' }}</span>
             </div>
             <form class="panel-body" @submit.prevent="save">
-              <fieldset :disabled="locked">
+              <fieldset class="form-fields" :disabled="locked">
                 <div class="field">
                   <label for="ticketTitle">工单标题</label
                   ><input
@@ -211,9 +211,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
               <h2>人工审批</h2>
               <Icon name="shield" />
             </div>
-            <form class="panel-body" @submit.prevent="approve">
+            <form class="panel-body approval-form" @submit.prevent="approve">
               <p class="muted">请确认已核对报告证据、整改建议和维护窗口。审批后将锁定当前内容。</p>
-              <div class="field" style="margin-top: var(--space-md)">
+              <div class="field">
                 <label for="code">本地审批码</label
                 ><input
                   id="code"
@@ -230,9 +230,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
                   busy ? '正在处理…' : data.ticket.status === 'APPROVED' ? '工单已审批' : '人工审批当前草稿'
                 }}
               </button>
-              <p v-if="dirty" class="muted" style="margin-top: var(--space-xs)">
-                请先保存草稿修改，审批码输入与审批操作将恢复。
-              </p>
+              <p v-if="dirty" class="muted">请先保存草稿修改，审批码输入与审批操作将恢复。</p>
             </form>
           </section>
           <section class="panel panel-body help-card">

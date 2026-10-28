@@ -9,6 +9,7 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+/** 为 Agent 请求建立线程内追踪上下文，供日志与调用核心 REST 时复用；请求结束必须清理。 */
 @Component
 public class TraceFilter extends OncePerRequestFilter {
     @Override

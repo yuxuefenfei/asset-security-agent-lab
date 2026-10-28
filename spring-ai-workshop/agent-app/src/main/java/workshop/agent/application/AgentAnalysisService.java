@@ -10,6 +10,9 @@ import workshop.agent.client.CoreLabGateway;
 import workshop.agent.config.*;
 import workshop.agent.tool.RequestScopedAssetTools;
 
+/**
+ * Spring AI 分析用例：预先校验目标，再按配置选择本地工具或 MCP 回调，返回模型解释。 它不经过核心 AnalysisService，因此不会保存核心评分报告，也不会创建或审批工单。
+ */
 @Service
 @RequiredArgsConstructor
 public class AgentAnalysisService {
@@ -19,6 +22,7 @@ public class AgentAnalysisService {
     private final LabProperties config;
     private final AgentPrompt prompt;
 
+    /** 先校验固定目标，再让 Spring AI 执行模型与工具循环；MCP 回调未连接时直接报错。 */
     public AgentResponse analyze(AgentRequest request) {
         // 在模型调用之前拒绝越权目标；工具执行时网关仍会再次检查固定 IP。
         gateway.verifyIp(request.ip());

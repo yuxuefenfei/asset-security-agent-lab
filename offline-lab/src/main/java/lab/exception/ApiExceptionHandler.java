@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+/** 核心控制器的统一异常出口；把业务错误映射为 HTTP 状态和响应信封，内部异常详情只写服务端日志。 */
 @Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler {

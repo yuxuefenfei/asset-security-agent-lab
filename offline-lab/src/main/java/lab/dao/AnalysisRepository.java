@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 报告持久化边界：将一份报告拆成主表、知识证据和工具轨迹，并在读取时重组历史快照。 */
 @Repository
 @RequiredArgsConstructor
 public class AnalysisRepository {
@@ -150,6 +151,7 @@ public class AnalysisRepository {
         return page(page, size, "", null, null);
     }
 
+    /** 数据库分页投影，仅选择列表字段；不逐行解析快照或读取证据明细。 */
     public PageResponse<AnalysisSummary> page(
             long page, long size, String q, RiskLevel riskLevel, AnalysisMode mode) {
         var query = baseQuery();

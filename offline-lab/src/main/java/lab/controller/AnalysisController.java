@@ -8,6 +8,7 @@ import lab.service.AnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+/** 分析用例的 HTTP 适配层：接收与校验请求后交给 AnalysisService，不在控制器中编排模型或操作数据库。 */
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor

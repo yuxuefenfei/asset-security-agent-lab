@@ -14,12 +14,14 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 工单持久化边界：集中附加租户条件、稳定排序及乐观锁更新，业务状态校验由 TicketService 负责。 */
 @Repository
 @RequiredArgsConstructor
 public class TicketRepository {
     private final TicketMapper mapper;
     private final SecurityProperties security;
 
+    /** 同时按主键和服务端租户查询，避免根据工单编号跨租户读取。 */
     public TicketPO find(String id) {
         return mapper.selectOneByQuery(
                 QueryWrapper.create()
@@ -27,6 +29,7 @@ public class TicketRepository {
                         .and(TICKET.TENANT_ID.eq(security.tenantId())));
     }
 
+    /** 查找报告已关联的工单，供幂等创建和唯一键竞争后的重读使用。 */
     public TicketPO findForAnalysis(String analysisId) {
         return mapper.selectOneByQuery(
                 QueryWrapper.create()
@@ -53,6 +56,7 @@ public class TicketRepository {
         return mapper.paginate(page, size, query());
     }
 
+    /** 在租户基础条件上叠加搜索与状态筛选，再执行数据库分页。 */
     public Page<TicketPO> page(
             long page,
             long size,

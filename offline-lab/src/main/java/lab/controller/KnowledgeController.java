@@ -9,6 +9,7 @@ import lab.service.KnowledgeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+/** 知识 HTTP 查询入口；区分工作台分页目录、单条详情和提供给工具的相关性搜索。 */
 @RestController
 @RequestMapping("/api/knowledge")
 @RequiredArgsConstructor

@@ -81,7 +81,7 @@ function save() {
       <h2>可用只读工具</h2>
       <span class="muted">{{ data.tools.length }} 个工具</span>
     </div>
-    <div class="panel-body">
+    <div class="panel-body tool-catalog">
       <article v-for="tool in data.tools" :key="tool.function.name">
         <div class="section-heading">
           <h3 class="mono">{{ tool.function.name }}</h3>

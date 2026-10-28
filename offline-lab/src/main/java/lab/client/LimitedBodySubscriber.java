@@ -11,9 +11,14 @@ import java.util.concurrent.Flow;
 
 /** 在响应接收过程中执行容量上限，取消超限下载。 */
 final class LimitedBodySubscriber implements HttpResponse.BodySubscriber<String> {
+    /** 单个模型响应允许缓存的最大字节数；不是字符数。 */
     private final int limit;
+
     private final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+    /** 响应完成或失败的异步结果，供 HttpClient 的等待和超时控制使用。 */
     private final CompletableFuture<String> body = new CompletableFuture<>();
+
     private Flow.Subscription subscription;
 
     LimitedBodySubscriber(int limit) {

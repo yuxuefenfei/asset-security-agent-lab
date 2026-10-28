@@ -19,6 +19,7 @@ import lab.exception.LabException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/** 资产查询入口：先限制当前租户，再组装端口信息；控制器和工具共用此授权逻辑。 */
 @Service
 @RequiredArgsConstructor
 public class AssetService {
@@ -28,6 +29,7 @@ public class AssetService {
     private final PolicyProperties policy;
     private final PagePolicy pages;
 
+    /** 按 IP 读取授权资产；当前租户无权访问时拒绝，不把外部输入当成租户条件。 */
     public AssetResponse get(String ip) {
         if (ip == null || ip.isBlank()) throw new IllegalArgumentException("请输入目标资产 IP");
         var asset =
@@ -44,6 +46,7 @@ public class AssetService {
         return response(asset);
     }
 
+    /** 旧接口的有界列表；上限由配置决定，新工作台通过 page 访问。 */
     public List<AssetResponse> list() {
         return assets
                 .selectListByQuery(
@@ -60,6 +63,7 @@ public class AssetService {
         return page(number, size, null, null, null);
     }
 
+    /** 按关键词、业务重要性和暴露范围筛选；排序、统计总数和分页都由数据库完成。 */
     public PageResponse<AssetResponse> page(
             long number, long size, String q, Criticality criticality, Boolean exposed) {
         pages.validate(number, size);
@@ -83,6 +87,7 @@ public class AssetService {
                 result.getTotalRow());
     }
 
+    /** 组合资产主记录与排序后的端口明细，隔离数据库实体和对外契约。 */
     private AssetResponse response(AssetPO asset) {
         return new AssetResponse(
                 asset.getId(),

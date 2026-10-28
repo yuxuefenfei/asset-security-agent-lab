@@ -7,6 +7,7 @@ import lab.service.AssetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+/** 资产 HTTP 查询入口；兼容旧的列表或单资产接口，新工作台使用独立分页接口。 */
 @RestController
 @RequestMapping("/api/assets")
 @RequiredArgsConstructor

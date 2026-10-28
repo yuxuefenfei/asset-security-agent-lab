@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 工作台计数服务，在数据库执行聚合；统计口径分别对应资产、报告和工单。 */
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
@@ -27,6 +28,7 @@ public class DashboardService {
     private final SecurityProperties security;
 
     // 高风险按报告计数，待办按 DRAFT 工单计数；知识是共享目录，不是按资产风险聚合。
+    /** 在只读事务中统计工作台指标；高风险按报告计数，待审核按草稿工单计数。 */
     @Transactional(readOnly = true)
     public DashboardResponse get() {
         return new DashboardResponse(

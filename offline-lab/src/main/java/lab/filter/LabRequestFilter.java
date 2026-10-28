@@ -20,6 +20,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+/** 核心 HTTP 入口过滤器：设置追踪编号、校验实验口令，并在进入控制器前限制写入请求体大小。 */
 @Component
 @RequiredArgsConstructor
 public class LabRequestFilter extends OncePerRequestFilter {
@@ -28,6 +29,7 @@ public class LabRequestFilter extends OncePerRequestFilter {
     private final PolicyProperties policy;
     private final ObjectMapper json;
 
+    /** 在控制器之前完成口令和请求容量检查；无论成功或失败都清理线程内的 traceId。 */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

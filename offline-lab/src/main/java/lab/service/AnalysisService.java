@@ -15,7 +15,7 @@ import lab.tools.ToolSessionFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/** 编排单资产分析：规则负责评分，模型只补充解释，成功后才保存报告快照。 */
+/** 单资产分析的应用编排器：固定授权快照、预查询证据、规则评分、按需调用模型，最后保存完整报告。 业务评分始终由 RiskPolicy 决定；模型仅补充解释，模型失败时不会落库为成功报告。 */
 @Service
 @RequiredArgsConstructor
 public class AnalysisService {
@@ -26,8 +26,11 @@ public class AnalysisService {
     private final PolicyProperties policy;
     private final PagePolicy pages;
     private final Clock clock;
+
+    /** 所有分析共享的并发闸门，获取失败立即返回繁忙错误，不让 HTTP 请求无限排队。 */
     private final Semaphore capacity;
 
+    /** 同步执行并保存一次分析；从获取并发名额到保存报告都属于本次调用，finally 保证释放名额。 */
     public AnalysisReport analyze(AnalysisRequest request) {
         String question = request.question() == null ? "分析资产安全风险" : request.question();
         if (question.isBlank() || question.length() > policy.maxQuestionLength())
@@ -87,14 +90,17 @@ public class AnalysisService {
         }
     }
 
+    /** 读取当前租户的完整历史报告，内容由保存时快照重组。 */
     public AnalysisReport get(String id) {
         return reports.get(id);
     }
 
+    /** 兼容旧调用方的有限列表；新页面应使用摘要分页，避免重复加载完整报告。 */
     public List<AnalysisReport> list() {
         return reports.list(policy.legacyListLimit());
     }
 
+    /** 分页读取必要的报告摘要列，完整快照仅在打开报告详情时加载。 */
     public PageResponse<AnalysisSummary> page(
             long page, long size, String q, RiskLevel riskLevel, AnalysisMode mode) {
         pages.validate(page, size);

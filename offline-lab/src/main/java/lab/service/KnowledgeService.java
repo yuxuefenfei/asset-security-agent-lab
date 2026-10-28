@@ -14,6 +14,7 @@ import lab.dao.KnowledgeMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/** 共享教学知识查询：目录分页使用字面子串，分析工具使用按词加权的相关性检索。 */
 @Service
 @RequiredArgsConstructor
 public class KnowledgeService {
@@ -50,6 +51,7 @@ public class KnowledgeService {
                 result.getTotalRow());
     }
 
+    /** 读取共享目录单条正文；报告复核使用已保存证据，而不是重新调用此方法替换历史正文。 */
     public KnowledgeResponse get(String id) {
         var k = mapper.selectOneById(id);
         if (k == null) throw new IllegalArgumentException("知识条目不存在");

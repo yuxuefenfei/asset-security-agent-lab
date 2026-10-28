@@ -377,6 +377,102 @@ test('ticket status shortcuts preserve filters and open the current review versi
     await page.close()
   }
 })
+test('search controls align across analysis and list pages on desktop and mobile', async () => {
+  const page = await pageForTest()
+  try {
+    await page.locator('#ip').waitFor()
+    for (const width of [1440, 1024, 768, 414, 375, 320]) {
+      await page.setViewportSize({ width, height: 1000 })
+      const input = await page.locator('#assetPickerSearch').boundingBox()
+      const button = await page.getByRole('button', { name: '查找资产', exact: true }).boundingBox()
+      assert.ok(
+        Math.abs(input.y + input.height - button.y - button.height) <= 1,
+        'asset search bottom alignment at ' + width,
+      )
+      assert.ok(Math.abs(input.height - button.height) <= 1, 'asset search control height at ' + width)
+      const spacing = await page.evaluate(() => {
+        const bottom = (selector) => document.querySelector(selector).getBoundingClientRect().bottom
+        const top = (selector) => document.querySelector(selector).getBoundingClientRect().top
+        return {
+          pagerGap: top('.asset-picker-pagination') - bottom('.asset-picker .helper'),
+          sectionGap: top('#modeLabel') - bottom('.asset-picker-pagination'),
+          helpGap:
+            document.querySelector('.help-card-heading h2').getBoundingClientRect().left -
+            document.querySelector('.help-card-heading svg').getBoundingClientRect().right,
+        }
+      })
+      assert.ok(spacing.pagerGap >= 12, 'space between asset hint and pager at ' + width)
+      assert.ok(spacing.sectionGap >= 24, 'space before execution mode at ' + width)
+      assert.ok(spacing.helpGap >= 12, 'space between help icon and heading at ' + width)
+      assert.ok(
+        await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+        'analysis page overflow at ' + width,
+      )
+    }
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    await page.screenshot({
+      path: path.join(root, 'offline-lab/target/ui-review/after-analysis.png'),
+      fullPage: true,
+    })
+    await page.fill('#assetPickerSearch', 'payment-api')
+    await page.getByRole('button', { name: '查找资产', exact: true }).click()
+    await page.waitForFunction(() => document.querySelector('#ip')?.options.length === 1)
+    assert.match(await page.locator('#ip').innerText(), /payment-api/)
+
+    for (const route of ['/assets', '/reports', '/tickets', '/knowledge']) {
+      await page.goto(base + '/#' + route)
+      await page.locator('.filter-bar input').waitFor()
+      for (const width of [1440, 768, 375, 320]) {
+        await page.setViewportSize({ width, height: 1000 })
+        const controls = await page
+          .locator('.filter-bar input, .filter-bar select, .filter-bar button')
+          .evaluateAll((elements) =>
+            elements.map((element) => {
+              const rect = element.getBoundingClientRect()
+              return { height: rect.height, bottom: rect.bottom, top: rect.top }
+            }),
+          )
+        const expected = width <= 600 ? 44 : 40
+        assert.ok(
+          controls.every((control) => Math.abs(control.height - expected) <= 1),
+          route + ' consistent control heights at ' + width,
+        )
+        if (width === 1440)
+          assert.ok(
+            controls.every((control) => Math.abs(control.bottom - controls[0].bottom) <= 1),
+            route + ' desktop alignment',
+          )
+        assert.ok(
+          await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+          route + ' overflow at ' + width,
+        )
+      }
+      if (route === '/assets') {
+        await page.setViewportSize({ width: 1440, height: 1000 })
+        await page.locator('tbody tr').first().waitFor()
+        await page.locator('#criticality').hover()
+        const select = await page.locator('#criticality').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return { rightPadding: parseFloat(style.paddingRight), arrow: style.backgroundImage }
+        })
+        assert.ok(select.rightPadding >= 32, 'select leaves room for arrow')
+        assert.notEqual(select.arrow, 'none', 'select arrow remains visible when hovered')
+        await page.screenshot({
+          path: path.join(root, 'offline-lab/target/ui-review/after-assets.png'),
+          fullPage: true,
+        })
+        await page.setViewportSize({ width: 375, height: 1000 })
+        await page.screenshot({
+          path: path.join(root, 'offline-lab/target/ui-review/after-assets-mobile.png'),
+          fullPage: true,
+        })
+      }
+    }
+  } finally {
+    await page.close()
+  }
+})
+
 test('desktop and mobile workbench render without page overflow or script errors', async () => {
   const page = await pageForTest('/')
   const errors = []

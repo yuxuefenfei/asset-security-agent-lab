@@ -7,8 +7,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
+/** 配置 MCP 工具到核心 REST 的 HTTP 客户端，统一地址、实验口令、超时及当前线程的追踪头传播。 */
 @Configuration
 public class CoreClientConfiguration {
+    /** 统一构造访问核心 REST 的客户端；携带实验口令，并转发当前线程的请求编号以关联日志。 */
     @Bean
     RestClient coreRestClient(LabProperties config, RestClient.Builder builder) {
         var factory = new SimpleClientHttpRequestFactory();

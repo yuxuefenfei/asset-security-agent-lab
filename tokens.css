@@ -48,6 +48,7 @@
   --rule-width: 1px;
   --shell-sidebar-width: 13rem;
   --shell-topbar-height: 3.5rem;
+  --control-height: 2.5rem;
   --dur-short: 140ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);

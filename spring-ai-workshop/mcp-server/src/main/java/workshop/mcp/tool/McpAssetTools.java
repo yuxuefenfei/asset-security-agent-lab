@@ -19,6 +19,7 @@ public class McpAssetTools {
     private final RestClient client;
     private final LabProperties config;
 
+    /** MCP 工具的固定目标校验；通过后仍由核心服务执行租户授权。 */
     private void validate(String ip) {
         if (!config.allowedIp().equals(ip))
             throw new SecurityException("MCP 教学工具仅允许访问 " + config.allowedIp());

@@ -10,9 +10,12 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import workshop.agent.client.CoreLabGateway;
 
+/** 每次请求单独创建的本地工具适配器；绑定该次目标 IP，避免模型改变请求目标。 不是全局单例，@Tool 方法由 Spring AI 注册和执行；核心 REST 仍再次检查租户。 */
 @RequiredArgsConstructor
 public class RequestScopedAssetTools {
     private final CoreLabGateway gateway;
+
+    /** 本次请求的目标；与服务级白名单分别校验，避免共享工具实例串用其他请求的目标。 */
     private final String allowedIp;
 
     // 请求范围对象绑定当前目标，模型传参不能扩大到同一服务允许的其他目标。
